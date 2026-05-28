@@ -106,12 +106,12 @@ async-first logger, increase the weight of async lifecycle and backpressure.
 | Runtime model fit for sync logging | 15 | 4 | 5 | 2 | `slog` aligns with the sync package; `alog` is intentionally async-scoped. |
 | Public API clarity and size | 15 | 3 | 4 | 3 | `slog` has a smaller sink surface; `xlog` is familiar but bundles more concepts. |
 | Sink flexibility | 15 | 3 | 5 | 4 | `slog` accepts any sync writer; `alog` accepts async writers; `xlog` centers its own writers. |
-| File/stdout write quality | 15 | 2 | 4 | 4 | `xlog` rewrites files per entry; `slog` and `alog` can use append-mode writers supplied by callers. |
+| File/stdout write quality | 15 | 4 | 4 | 4 | `xlog` now uses a native append-mode file handler; `slog` and `alog` rely on writers supplied by callers. |
 | Filtering and configuration | 10 | 5 | 5 | 2 | `xlog` and `slog` have env parsing and hierarchical category overrides. |
 | Async lifecycle and backpressure | 10 | 1 | 2 | 4 | `alog` has scoped drain behavior, but still needs clearer queue/backpressure policy. |
 | Test coverage for current behavior | 10 | 4 | 4 | 4 | All three have focused tests for core behavior; they exercise different I/O models. |
 | Publishing risk and implementation complexity | 10 | 3 | 4 | 2 | `alog` carries more runtime-model risk; `slog` is the narrowest sync evolution. |
-| **Weighted total** | **100** | **62** | **84** | **63** | Higher is better for the synchronous logger goal. |
+| **Weighted total** | **100** | **68** | **84** | **63** | Higher is better for the synchronous logger goal. |
 
 ## Decision Guide
 
@@ -129,5 +129,5 @@ async-first logger, increase the weight of async lifecycle and backpressure.
   move to a dependency that matches the sync package direction?
 - Should `alog` add config/env filtering, bounded queues, or explicit drop/error
   handling before it is considered a package candidate?
-- Should `MOON_SLOG` remain the shared environment variable if both `xlog` and
-  `slog` coexist?
+- Should `MOON_XLOG` and `MOON_SLOG` stay experiment-specific, or should the
+  eventual package converge on one environment variable name?
