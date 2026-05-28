@@ -1,0 +1,11 @@
+import {
+  "moonbitlang/core/encoding/utf8",
+  "tonyfettes/sync/internal/c_buffer",
+}
+
+supported_targets = "native"
+
+options(
+  "native-stub": [ "stub.c" ],
+  targets: { "os_string.mbt": [ "native" ] },
+)

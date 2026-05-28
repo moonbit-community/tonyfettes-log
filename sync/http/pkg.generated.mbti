@@ -1,0 +1,149 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/sync/http"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/sync/io",
+  "tonyfettes/sync/socket",
+  "tonyfettes/sync/tls",
+}
+
+// Values
+pub fn get(String, headers? : Map[String, String], body? : &@io.Data, proxy? : Client) -> (Response, &@io.Data) raise
+
+pub fn get_stream(String, headers? : Map[String, String], body? : &@io.Data, proxy? : Client) -> (Response, Client) raise
+
+pub fn post(String, &@io.Data, headers? : Map[String, String], proxy? : Client) -> (Response, &@io.Data) raise
+
+pub fn post_stream(String, headers? : Map[String, String], proxy? : Client) -> Client raise
+
+pub fn put(String, &@io.Data, headers? : Map[String, String], proxy? : Client) -> (Response, &@io.Data) raise
+
+pub fn put_stream(String, headers? : Map[String, String], proxy? : Client) -> Client raise
+
+// Errors
+pub suberror HttpProtocolError {
+  BadRequest
+  HttpVersionNotSupported(String)
+  NotImplemented
+} derive(ToJson, @debug.Debug)
+#deprecated
+pub impl Show for HttpProtocolError
+
+pub suberror IncorrectBodyLength derive(ToJson, @debug.Debug)
+
+pub suberror ProxyError {
+  ProxyError(Response)
+} derive(ToJson, @debug.Debug)
+#deprecated
+pub impl Show for ProxyError
+
+pub suberror URIParseError {
+  InvalidFormat
+  UnsupportedProtocol(String)
+} derive(ToJson, @debug.Debug)
+#deprecated
+pub impl Show for URIParseError
+
+// Types and methods
+pub struct Client {
+  // private fields
+}
+#alias(new, deprecated)
+#label_migration(verify, fill=false, msg="use `trust` instead")
+pub fn Client::Client(String, headers? : Map[String, String], proxy? : Self, verify? : Bool, trust? : @tls.TrustedRoot) -> Self raise
+pub fn Client::close(Self) -> Unit
+pub fn Client::end_request(Self) -> Response raise
+pub fn Client::enter_passthrough_mode(Self) -> Unit raise
+pub fn Client::flush(Self) -> Unit raise
+pub fn Client::get(Self, String, extra_headers? : Map[String, String], body? : &@io.Data) -> Response raise
+pub fn Client::post(Self, String, &@io.Data, extra_headers? : Map[String, String]) -> Response raise
+pub fn Client::put(Self, String, &@io.Data, extra_headers? : Map[String, String]) -> Response raise
+pub fn Client::request(Self, RequestMethod, StringView, extra_headers? : Map[String, String]) -> Unit raise
+pub fn Client::skip_response_body(Self) -> Unit raise
+pub impl @io.Reader for Client
+pub impl @io.Writer for Client
+
+pub struct Cookie {
+  name : String
+  value : String
+  path : String?
+  expires_raw : String?
+  max_age : Int64?
+  domain : String?
+  secure : Bool
+  http_only : Bool
+  extensions : Array[String]
+} derive(ToJson, @debug.Debug)
+#alias(new, deprecated)
+pub fn Cookie::Cookie(String, String, path? : String, expires_raw? : String, max_age? : Int64, domain? : String, secure? : Bool, http_only? : Bool, extensions? : Array[String]) -> Self
+
+pub(all) enum Protocol {
+  Http
+  Https
+} derive(Compare, Eq, Hash, ToJson, @debug.Debug)
+pub fn Protocol::default_port(Self) -> Int
+#deprecated
+pub impl Show for Protocol
+
+pub(all) struct Request {
+  meth : RequestMethod
+  path : String
+  headers : Map[String, String]
+} derive(ToJson, @debug.Debug)
+#deprecated
+pub impl Show for Request
+
+pub(all) enum RequestMethod {
+  Get
+  Head
+  Post
+  Put
+  Delete
+  Connect
+  Options
+  Trace
+  Patch
+} derive(Compare, Eq, Hash, ToJson, @debug.Debug)
+#deprecated
+pub impl Show for RequestMethod
+
+pub(all) struct Response {
+  code : Int
+  reason : String
+  headers : Map[String, String]
+  cookies : Array[Cookie]
+} derive(ToJson, @debug.Debug)
+#deprecated
+pub impl Show for Response
+
+pub struct Server {
+  addr : @socket.Addr
+  // private fields
+}
+#alias(new, deprecated)
+pub fn Server::Server(@socket.Addr, dual_stack? : Bool, reuse_addr? : Bool, headers? : Map[String, String]) -> Self raise
+pub fn Server::accept(Self) -> (ServerConnection, @socket.Addr) raise
+#deprecated
+pub fn Server::addr(Self) -> @socket.Addr
+pub fn Server::close(Self) -> Unit
+pub fn Server::run_forever(Self, (Request, &@io.Reader, ServerConnection) -> Unit, allow_failure? : Bool, max_connections? : Int) -> Unit raise
+
+type ServerConnection
+pub fn ServerConnection::client_addr(Self) -> @socket.Addr
+pub fn ServerConnection::close(Self) -> Unit
+pub fn ServerConnection::end_response(Self) -> Unit raise
+pub fn ServerConnection::enter_passthrough_mode(Self) -> Unit raise
+pub fn ServerConnection::flush(Self) -> Unit raise
+pub fn ServerConnection::new(@socket.Tcp, headers? : Map[String, String]) -> Self
+pub fn ServerConnection::read_request(Self) -> Request raise
+pub fn ServerConnection::send_response(Self, Int, String, extra_headers? : Map[String, String], cookies? : Array[Cookie]) -> Unit raise
+pub fn ServerConnection::skip_request_body(Self) -> Unit raise
+pub fn ServerConnection::write_string(Self, String) -> Unit raise
+pub impl @io.Reader for ServerConnection
+pub impl @io.Writer for ServerConnection
+
+// Type aliases
+
+// Traits
+

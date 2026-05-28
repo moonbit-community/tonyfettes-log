@@ -1,0 +1,281 @@
+// Copyright 2025 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// A Tcp connection
+pub struct Tcp {
+  /// The local address of a TCP connection
+  addr : Addr
+  priv io : @event_loop.IoHandle
+  priv read_buf : @io.ReaderBuffer
+}
+
+///|
+pub fn Tcp::close(self : Tcp) -> Unit {
+  self.io.close()
+}
+
+///|
+pub fn Tcp::fd(self : Tcp) -> @fd_util.Fd {
+  self.io.fd()
+}
+
+///|
+pub struct TcpServer {
+  /// The actual listen address of the server
+  addr : Addr
+  priv io : @event_loop.IoHandle
+}
+
+///|
+/// Create a TCP server that is bound to `addr`,
+/// listening for incoming connections.
+///
+/// If `addr` is the IPv6 wildcard address `[::]`
+/// and `dual_stack` is `true` (`true` by default),
+/// the server will work in dual stack mode,
+/// accepting connections from both IPv4 clients and IPv6 clients.
+/// The address of IPv4 clients are represented via IPv4-mapped IPv6 address.
+///
+/// If `addr` is not `[::]`, `dual_stack` is ignored.
+///
+/// If the port of `addr` is zero, the server will be bound to a random port,
+/// assigned by the operating system.
+/// The actual listen address can be retrieved via `.addr()`.
+///
+/// If `reuse_addr` is `true` (`false` by default),
+/// the `SO_REUSEADDR` option will be enabled on the server,
+/// allowing binding to `addr` even if there are still
+/// dead-ish `TIME_WAIT` sockets on that address.
+///
+/// On Windows, `TIME_WAIT` sockets are always ignored,
+/// so the behavior is always `reuse_addr=true` and `reuse_addr` will be ignored.
+///
+/// On MacOS (BSD), `reuse_addr` has the extra side effect that
+/// a server binding to a specific address may "steal" the specific interface
+/// from a previous wildcard bind (`0.0.0.0`),
+/// and similarly a server binding to a wildcard address can bind to
+/// the remaining interfaces if a bind to a specific interface already exists.
+/// This side effect cannot be isolated, so `reuse_addr` should be used with this in mind.
+#alias(new, deprecated)
+pub fn TcpServer::TcpServer(
+  addr : Addr,
+  dual_stack? : Bool = true,
+  reuse_addr? : Bool = false,
+) -> TcpServer raise {
+  let context = "@socket.TcpServer::new()"
+  let family = addr.family()
+  let sock = make_tcp_socket(family, context~)
+  let io = @event_loop.IoHandle::from_fd(sock, kind=Socket)
+  try {
+    if addr.is_ipv6() && addr.is_ipv6_wildcard() {
+      if 0 != set_ipv6_only(sock, !dual_stack) {
+        @os_error.check_errno(context)
+      }
+    }
+    if !@event_loop.IS_WINDOWS && reuse_addr {
+      guard allow_reuse_addr(sock) >= 0 else { @os_error.check_errno(context) }
+    }
+    io.bind(addr.0, context~)
+    if 0 != listen_ffi(sock) {
+      @os_error.check_errno(context)
+    }
+    // If `addr` specifies zero as the listen port,
+    // the OS will assign a random port for us,
+    // in this case, we need to retrieve the actual port via `getsockname`.
+    let addr = getsockname(sock, family, context~)
+    { io, addr }
+  } catch {
+    err => {
+      io.close()
+      raise err
+    }
+  }
+}
+
+///|
+/// Get the address the server is listening on
+#deprecated("use `.addr` instead")
+pub fn TcpServer::addr(server : TcpServer) -> Addr {
+  server.addr
+}
+
+///|
+/// Start the main loop of a TCP server,
+/// keep listening for new connections
+/// and handle connections using the callback `f`.
+/// `f` will be supplied the new connection and the address of the client.
+///
+/// The client connection will be closed automatically after `f` exits,
+/// so `f` must not close the client connection.
+/// The server will be automatically closed if `run_forever` fails.
+///
+/// If `allow_failure` is `true` (`true` by default),
+/// failure in `f` will be silently ignored.
+///
+/// If `max_connections` is present,
+/// at most `max_connections` clients are allowed in parallel.
+/// New clients will only get handled after a previous client terminates.
+pub fn TcpServer::run_forever(
+  self : TcpServer,
+  f : (Tcp, Addr) -> Unit raise,
+  allow_failure? : Bool = true,
+  max_connections? : Int,
+) -> Unit raise {
+  defer self.close()
+  ignore(max_connections)
+  for ;; {
+    let (conn, addr) = self.accept()
+    try {
+      defer conn.close()
+      f(conn, addr)
+    } catch {
+      err => if !allow_failure { raise err }
+    }
+  }
+}
+
+///|
+pub fn TcpServer::close(self : TcpServer) -> Unit {
+  self.io.close()
+}
+
+///|
+pub fn TcpServer::fd(self : TcpServer) -> @fd_util.Fd {
+  self.io.fd()
+}
+
+///|
+/// Accept a new connection on a listening TCP server.
+/// The accepted connection will be returned together with the address of peer.
+#cfg(not(platform="windows"))
+pub fn TcpServer::accept(self : TcpServer) -> (Tcp, Addr) raise {
+  // Create a big enough Addr to hold both IPv4 and IPv6 address
+  let addr = Addr::empty(self.addr.family())
+  let conn = self.io.accept(addr.0, context="@socket.TcpServer::accept")
+  try {
+    if disable_nagle(conn.fd()) < 0 {
+      @os_error.check_errno("@socket.TcpServer::accept(): set TCP_NODELAY")
+    }
+    @fd_util.set_cloexec(conn.fd(), context="@socket.TcpServer::accept()")
+  } catch {
+    err => {
+      conn.close()
+      raise err
+    }
+  }
+  // The local address of a server connection is the same as the listen address
+  ({ io: conn, addr: self.addr, read_buf: @io.ReaderBuffer::new() }, addr)
+}
+
+///|
+/// Accept a new connection on a listening TCP server.
+/// The accepted connection will be returned together with the address of peer.
+#cfg(platform="windows")
+pub fn TcpServer::accept(self : TcpServer) -> (Tcp, Addr) raise {
+  let context = "@socket.TcpServer::accept()"
+  let family = self.addr.family()
+  let conn_sock = make_tcp_socket(family, context~)
+  let conn = self.io.accept(conn_sock, context~)
+  try {
+    if disable_nagle(conn_sock) < 0 {
+      @os_error.check_errno("@socket.TcpServer::accept(): set TCP_NODELAY")
+    }
+    let addr = getpeername(conn_sock, self.addr.family(), context~)
+    // The local address of a server connection is the same as the listen address
+    ({ io: conn, addr: self.addr, read_buf: @io.ReaderBuffer::new() }, addr)
+  } catch {
+    err => {
+      conn.close()
+      raise err
+    }
+  }
+}
+
+///|
+/// Enable TCP keep alive on the socket.
+///
+/// `idle_before_keep_alive` is the duration of idle time in seconds to wait
+/// before sending the first keep alive probe.
+///
+/// `keep_alive_count` is the number of keep alive probe to try
+/// before closing the connection.
+///
+/// `keep_alive_interval` is the time in seconds between two keep alive probes.
+pub fn Tcp::enable_keepalive(
+  self : Tcp,
+  idle_before_keep_alive? : Int = -1,
+  keep_alive_count? : Int = -1,
+  keep_alive_interval? : Int = -1,
+) -> Unit raise {
+  let ret = enable_keepalive_ffi(
+    self.io.fd(),
+    idle_before_keep_alive,
+    keep_alive_count,
+    keep_alive_interval,
+  )
+  if ret < 0 {
+    @os_error.check_errno("@socket.Tcp::enable_keepalive()")
+  }
+}
+
+///|
+/// Make connection to a remote address using `connect(2)` system call.
+pub fn Tcp::connect(addr : Addr) -> Tcp raise {
+  let context = "@socket.Tcp::connect()"
+  let family = addr.family()
+  let sock = make_tcp_socket(family, context~)
+  let conn = @event_loop.IoHandle::from_fd(sock, kind=Socket)
+  try {
+    if disable_nagle(sock) < 0 {
+      @os_error.check_errno("@socket.Tcp::connect(): set TCP_NODELAY")
+    }
+    conn.connect(addr.0, context~)
+    let addr = getsockname(sock, family, context~)
+    { io: conn, addr, read_buf: @io.ReaderBuffer::new() }
+  } catch {
+    err => {
+      conn.close()
+      raise err
+    }
+  }
+}
+
+///|
+/// Get the local address of a TCP connection.
+pub fn Tcp::addr(sock : Tcp) -> Addr {
+  sock.addr
+}
+
+///|
+/// Receive data from a TCP connection.
+/// For `tcp.recv(buf, offset~, max_len~)`,
+/// at most `max_len` bytes of data will be written to `buf`, starting from `offset`.
+/// The number of received bytes will be returned.
+///
+/// At most one caller can read from a TCP socket at any time.
+/// To allow multiple readers, use an application-level dispatcher.
+pub impl @io.Reader for Tcp with fn _direct_read(self, buf, offset~, max_len~) {
+  self.io.read(buf, offset~, len=max_len, context="@socket.Tcp::read()")
+}
+
+///|
+pub impl @io.Reader for Tcp with fn _get_internal_buffer(self) {
+  self.read_buf
+}
+
+///|
+pub impl @io.Writer for Tcp with fn write_once(self, buf, offset~, len~) {
+  self.io.write(buf, offset~, len~, context="@socket.Tcp::write()")
+}

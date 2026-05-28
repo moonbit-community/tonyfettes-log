@@ -1,0 +1,32 @@
+import {
+  "moonbitlang/core/string",
+  "tonyfettes/sync/os_error",
+  "tonyfettes/sync/internal/event_loop",
+  "tonyfettes/sync/internal/fd_util",
+  "tonyfettes/sync/internal/c_buffer",
+  "tonyfettes/sync/io",
+  "tonyfettes/sync/internal/os_string",
+}
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/encoding/utf8",
+} for "test"
+
+supported_targets = "native"
+
+options(
+  "native-stub": [ "socket.c" ],
+  targets: {
+    "addr.mbt": [ "native" ],
+    "addr_test.mbt": [ "native" ],
+    "addr_utils.mbt": [ "native" ],
+    "deprecated.mbt": [ "native" ],
+    "ffi.mbt": [ "native" ],
+    "happy_eyeball.mbt": [ "native" ],
+    "ifname.mbt": [ "native" ],
+    "socket_test.mbt": [ "native" ],
+    "tcp.mbt": [ "native" ],
+    "udp.mbt": [ "native" ],
+  },
+)

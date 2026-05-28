@@ -1,0 +1,15 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/core/encoding/utf8",
+  "tonyfettes/sync/fs",
+  "tonyfettes/sync/io",
+  "tonyfettes/sync/os_error",
+  "tonyfettes/sync/pipe",
+  "tonyfettes/sync/signal",
+  "tonyfettes/sync/stdio",
+}
+
+options(
+  "native-stub": [ "native.c" ],
+)

@@ -1,0 +1,12 @@
+import {
+  "moonbitlang/core/cmp",
+  "tonyfettes/sync/io",
+  "tonyfettes/sync/internal/gzip_internal",
+  "tonyfettes/sync/internal/io_buffer",
+}
+
+supported_targets = "native"
+
+import {
+  "moonbitlang/core/encoding/utf8",
+} for "test"

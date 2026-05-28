@@ -1,0 +1,74 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/sync/process"
+
+import {
+  "tonyfettes/sync/fs",
+  "tonyfettes/sync/io",
+  "tonyfettes/sync/pipe",
+  "tonyfettes/sync/signal",
+  "tonyfettes/sync/stdio",
+}
+
+// Values
+pub fn collect_output(StringView, ArrayView[String], extra_env? : Map[String, String], inherit_env? : Bool, stdin? : &ProcessInput, cwd? : StringView) -> (Int, &@io.Data, &@io.Data) raise
+
+pub fn collect_output_merged(StringView, Array[String], extra_env? : Map[String, String], inherit_env? : Bool, stdin? : &ProcessInput, cwd? : StringView) -> (Int, &@io.Data) raise
+
+pub fn collect_stderr(StringView, ArrayView[String], extra_env? : Map[String, String], inherit_env? : Bool, stdin? : &ProcessInput, stdout? : &ProcessOutput, cwd? : StringView) -> (Int, &@io.Data) raise
+
+pub fn collect_stdout(StringView, ArrayView[String], extra_env? : Map[String, String], inherit_env? : Bool, stdin? : &ProcessInput, stderr? : &ProcessOutput, cwd? : StringView) -> (Int, &@io.Data) raise
+
+pub fn graceful_cancel(timeout~ : Int, signal? : @signal.Signal) -> CancellationHandler
+
+pub fn hard_cancel() -> CancellationHandler
+
+pub fn read_from_process() -> (ReadFromProcess, &ProcessOutput) raise
+
+pub fn redirect_from_file(String) -> &ProcessInput raise
+
+#label_migration(create, fill=false, msg="the option `create` is deprecated, use `create_mode` and `permission` instead")
+#label_migration(truncate, fill=false, msg="the option `truncate` is deprecated, use `create_mode` instead")
+pub fn redirect_to_file(String, append? : Bool, create_mode? : @fs.CreateMode, permission? : Int, create? : Int, truncate? : Bool) -> &ProcessOutput raise
+
+pub fn run(StringView, ArrayView[String], extra_env? : Map[String, String], inherit_env? : Bool, stdin? : &ProcessInput, stdout? : &ProcessOutput, stderr? : &ProcessOutput, cwd? : StringView, cancel_handler? : CancellationHandler) -> Int raise
+
+pub fn spawn(StringView, ArrayView[String], extra_env? : Map[String, String], inherit_env? : Bool, stdin? : &ProcessInput, stdout? : &ProcessOutput, stderr? : &ProcessOutput, cwd? : StringView, cancel_handler? : CancellationHandler, no_wait? : Bool) -> Process raise
+
+pub fn spawn_orphan(StringView, ArrayView[String], extra_env? : Map[String, String], inherit_env? : Bool, stdin? : &ProcessInput, stdout? : &ProcessOutput, stderr? : &ProcessOutput, cwd? : StringView) -> Int raise
+
+pub fn wait_pid(Int) -> Int raise
+
+pub fn write_to_process() -> (&ProcessInput, WriteToProcess) raise
+
+// Errors
+
+// Types and methods
+pub(all) struct CancellationHandler((Int) -> Unit)
+
+pub struct Process {
+  pid : Int
+  // private fields
+}
+pub fn Process::cancel(Self) -> Unit
+pub fn Process::try_wait(Self) -> Int? raise
+pub fn Process::wait(Self) -> Int raise
+
+type ReadFromProcess
+pub fn ReadFromProcess::close(Self) -> Unit
+pub impl @io.Reader for ReadFromProcess
+
+type WriteToProcess
+pub fn WriteToProcess::close(Self) -> Unit
+pub impl @io.Writer for WriteToProcess
+
+// Type aliases
+
+// Traits
+trait ProcessInput
+pub impl ProcessInput for @pipe.PipeRead
+pub impl ProcessInput for @stdio.Input
+
+trait ProcessOutput
+pub impl ProcessOutput for @pipe.PipeWrite
+pub impl ProcessOutput for @stdio.Output
+

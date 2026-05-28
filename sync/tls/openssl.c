@@ -1,0 +1,417 @@
+/*
+ * Copyright 2025 International Digital Economy Academy
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef _WIN32
+
+#include <dlfcn.h>
+#include <string.h>
+#include <stdio.h>
+#include <moonbit.h>
+
+// TODO: are these stable?
+#define BIO_TYPE_NONE 0
+#define SSL_VERIFY_NONE 0x00
+#define SSL_VERIFY_PEER 0x01
+#define BIO_CTRL_FLUSH 11
+#define SSL_CTRL_MODE 33
+#define SSL_MODE_ENABLE_PARTIAL_WRITE 0x00000001U
+#define SSL_CTRL_SET_TLSEXT_HOSTNAME 55
+#define TLSEXT_NAMETYPE_host_name 0
+#define MAX_DIGEST_LEN 64
+
+typedef struct BIO_METHOD BIO_METHOD;
+typedef struct BIO BIO;
+typedef struct SSL SSL;
+typedef struct SSL_CTX SSL_CTX;
+typedef struct SSL_METHOD SSL_METHOD;
+typedef struct EVP_MD EVP_MD;
+typedef struct X509 X509;
+typedef struct X509_STORE X509_STORE;
+
+#define IMPORTED_OPEN_SSL_FUNCTIONS\
+  IMPORT_FUNC(BIO_METHOD*, BIO_meth_new, (int type, const char *name))\
+  IMPORT_FUNC(int, BIO_meth_set_write, (BIO_METHOD *biom, int (*write)(BIO *, const void *, int)))\
+  IMPORT_FUNC(int, BIO_meth_set_read, (BIO_METHOD *biom, int (*read)(BIO *, void *, int)))\
+  IMPORT_FUNC(int, BIO_meth_set_ctrl, (BIO_METHOD *biom, long (*ctrl)(BIO *, int, long, void *)))\
+  IMPORT_FUNC(int, BIO_meth_set_destroy, (BIO_METHOD *biom, int (*destroy)(BIO *)))\
+  IMPORT_FUNC(BIO *, BIO_new, (const BIO_METHOD *type))\
+  IMPORT_FUNC(void, BIO_set_data, (BIO *bio, void *data))\
+  IMPORT_FUNC(void *, BIO_get_data, (BIO *bio))\
+  IMPORT_FUNC(void, BIO_set_init, (BIO *bio, int init))\
+  IMPORT_FUNC(void, BIO_set_flags, (BIO *bio, int flags))\
+  IMPORT_FUNC(void, BIO_set_shutdown, (BIO *bio, int shutdown))\
+  IMPORT_FUNC(SSL *, SSL_new, (SSL_CTX *ctx))\
+  IMPORT_FUNC(void, SSL_set_bio, (SSL *s, BIO *rbio, BIO *wbio))\
+  IMPORT_FUNC(int, SSL_connect, (SSL *ssl))\
+  IMPORT_FUNC(void, SSL_set_verify, (SSL *ssl, int mode, int (*verify_cb)(int, void*)))\
+  IMPORT_FUNC(int, SSL_set1_host, (SSL *ssl, const char *host))\
+  IMPORT_FUNC(long, SSL_ctrl, (SSL *ssl, int cmd, long larg, void *parg))\
+  IMPORT_FUNC(int, SSL_accept, (SSL *ssl))\
+  IMPORT_FUNC(int, SSL_use_certificate_file, (SSL *ssl, const char *file, int type))\
+  IMPORT_FUNC(int, SSL_use_PrivateKey_file, (SSL *ssl, const char *file, int type))\
+  IMPORT_FUNC(int, SSL_read, (SSL *ssl, void *buf, int num))\
+  IMPORT_FUNC(int, SSL_write, (SSL *ssl, void *buf, int num))\
+  IMPORT_FUNC(int, SSL_get_error, (SSL *ssl, int ret))\
+  IMPORT_FUNC(size_t, SSL_get_finished, (const SSL *ssl, void *buf, size_t count))\
+  IMPORT_FUNC(size_t, SSL_get_peer_finished, (const SSL *ssl, void *buf, size_t count))\
+  IMPORT_FUNC(int, SSL_shutdown, (SSL *ssl))\
+  IMPORT_FUNC(void, SSL_free, (SSL *ssl))\
+  IMPORT_FUNC(X509 *, SSL_get_certificate, (const SSL *ssl))\
+  IMPORT_FUNC(SSL_CTX *, SSL_CTX_new, (const SSL_METHOD*))\
+  IMPORT_FUNC(void, SSL_CTX_free, (SSL_CTX *))\
+  IMPORT_FUNC(X509_STORE *, SSL_CTX_get_cert_store, (const SSL_CTX *ctx))\
+  IMPORT_FUNC(SSL_METHOD *, TLS_client_method, (void))\
+  IMPORT_FUNC(SSL_METHOD *, TLS_server_method, (void))\
+  IMPORT_FUNC(long, SSL_CTX_ctrl, (SSL_CTX *ctx, int cmd, long larg, void *parg))\
+  IMPORT_FUNC(void, SSL_CTX_set_verify, (SSL_CTX *ctx, int mode, int (*verify_cb)(int, void*)))\
+  IMPORT_FUNC(int, SSL_CTX_set_default_verify_paths, (SSL_CTX *ctx))\
+  IMPORT_FUNC(unsigned long, ERR_get_error, (void))\
+  IMPORT_FUNC(unsigned long, ERR_peek_error, (void))\
+  IMPORT_FUNC(char *, ERR_error_string, (unsigned long e, char *buf))\
+  IMPORT_FUNC(const char *, OBJ_nid2sn, (int n))\
+  IMPORT_FUNC(int, OBJ_find_sigid_algs, (int signid, int *pdig_nid, int *ppkey_nid))\
+  IMPORT_FUNC(const EVP_MD *, EVP_get_digestbyname, (const char *name))\
+  IMPORT_FUNC(const EVP_MD *, EVP_sha256, (void))\
+  IMPORT_FUNC(int, RAND_bytes, (unsigned char *buf, int num))\
+  IMPORT_FUNC(unsigned char *, SHA1, (const unsigned char *d, size_t n, unsigned char *md))\
+  IMPORT_FUNC_WITH_ALT_NAMES(X509 *, SSL_get1_peer_certificate, (const SSL *ssl), { "SSL_get_peer_certificate" })\
+  IMPORT_FUNC(X509 *, d2i_X509, (X509 **px, const unsigned char **in, long len))\
+  IMPORT_FUNC(int, X509_get_signature_nid, (const X509 *x))\
+  IMPORT_FUNC(void, X509_free, (const X509 *cert))\
+  IMPORT_FUNC(int, X509_STORE_add_cert, (X509_STORE *xs, X509 *x))\
+  IMPORT_FUNC(int, X509_digest, (const X509 *data, const EVP_MD *type, unsigned char *md, unsigned int *len))\
+  IMPORT_FUNC(int, i2d_X509_AUX, (X509 *cert, unsigned char **ppout))
+
+#define IMPORT_FUNC(ret, name, params) static ret (*name) params;
+#define IMPORT_FUNC_WITH_ALT_NAMES(ret, name, params, alt_names) IMPORT_FUNC(ret, name, params)
+IMPORTED_OPEN_SSL_FUNCTIONS
+#undef IMPORT_FUNC
+#undef IMPORT_FUNC_WITH_ALT_NAMES
+
+int moonbitlang_async_load_openssl(int *major, int *minor, int *fix) {
+  void *handle = 0;
+
+#ifdef __MACH__
+  handle = dlopen("/usr/lib/libssl.48.dylib", RTLD_LAZY);
+  if (!handle) handle = dlopen("/usr/lib/libssl.46.dylib", RTLD_LAZY);
+#else
+  handle = dlopen("libssl.so.3", RTLD_LAZY);
+  if (!handle) handle = dlopen("libssl.so.1.1", RTLD_LAZY);
+  if (!handle) handle = dlopen("libssl.so", RTLD_LAZY);
+#endif
+  if (!handle) return 1;
+
+  unsigned long (*OPENSSL_version_num)() = dlsym(handle, "OpenSSL_version_num");
+  if (!OPENSSL_version_num)
+    return 2;
+
+  unsigned long version = (*OPENSSL_version_num)();
+  *major = version >> 28;
+  *minor = (version >> 20) & 0xff;
+  *fix = (version >> 12) & 0xff;
+
+  if (*major < 1 || *major == 1 && (*minor < 1 || *minor == 1 && *fix < 1))
+    return 3;
+
+#define IMPORT_FUNC(ret, func, params)\
+  func = dlsym(handle, "" #func "");\
+  if (!func) return 4;
+#define IMPORT_FUNC_WITH_ALT_NAMES(ret, func, params, alt_names)\
+  func = dlsym(handle, "" #func "");\
+  if (!func) {\
+    const char *names[] = alt_names;\
+    for (int i = 0; !func && i < sizeof(names) / sizeof(const char*); ++i) {\
+      func = dlsym(handle, names[i]);\
+    }\
+    if (!func) return 4;\
+  }
+
+  IMPORTED_OPEN_SSL_FUNCTIONS
+
+#undef IMPORT_FUNC
+#undef IMPORT_FUNC_WITH_ALT_NAMES
+
+  return 0;
+}
+
+void *moonbitlang_async_tls_bio_get_endpoint(BIO * bio) {
+  void *data = BIO_get_data(bio);
+  moonbit_incref(data);
+  return data;
+}
+
+void moonbitlang_async_tls_bio_set_flags(BIO * bio, int flags) {
+  return BIO_set_flags(bio, flags);
+}
+
+void moonbitlang_async_tls_bio_set_shutdown(BIO * bio, int flags) {
+  return BIO_set_flags(bio, flags);
+}
+
+static
+long dummy_bio_ctrl(BIO *bio, int cmd, long larg, void *parg) {
+  if (cmd == BIO_CTRL_FLUSH) {
+    // BIO_CTRL_FLUSH, this is required by SSL
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+static
+int destroy_custom_bio(BIO *bio) {
+  moonbit_decref(BIO_get_data(bio));
+  return 1;
+}
+
+static BIO_METHOD *bio_method = 0;
+
+void moonbitlang_async_init_bio_method(
+  int (*read)(BIO *, void *, int),
+  int (*write)(BIO *, const void *, int)
+) {
+  bio_method = BIO_meth_new(BIO_TYPE_NONE, "moonbitlang/async");
+  BIO_meth_set_read(bio_method, read);
+  BIO_meth_set_write(bio_method, write);
+  BIO_meth_set_ctrl(bio_method, dummy_bio_ctrl);
+  BIO_meth_set_destroy(bio_method, destroy_custom_bio);
+}
+
+BIO *moonbitlang_async_tls_create_bio(void *data) {
+  BIO *bio = BIO_new(bio_method);
+  BIO_set_data(bio, data);
+  BIO_set_init(bio, 1);
+  return bio;
+}
+
+int moonbitlang_async_tls_ssl_ctx_is_null(SSL_CTX *ctx) {
+  return ctx == 0;
+}
+
+SSL_CTX *moonbitlang_async_tls_client_ctx(int32_t load_default_verify_path) {
+  SSL_CTX *client_ctx = SSL_CTX_new(TLS_client_method());
+  if (!client_ctx) return 0;
+
+  SSL_CTX_set_verify(client_ctx, SSL_VERIFY_PEER, 0);
+  if (load_default_verify_path && !SSL_CTX_set_default_verify_paths(client_ctx)) {
+    SSL_CTX_free(client_ctx);
+    return 0;
+  }
+
+  SSL_CTX_ctrl(client_ctx, SSL_CTRL_MODE, SSL_MODE_ENABLE_PARTIAL_WRITE, 0);
+  return client_ctx;
+}
+
+SSL_CTX *moonbitlang_async_tls_server_ctx() {
+  SSL_CTX *server_ctx = SSL_CTX_new(TLS_server_method());
+  SSL_CTX_ctrl(server_ctx, SSL_CTRL_MODE, SSL_MODE_ENABLE_PARTIAL_WRITE, 0);
+  return server_ctx;
+}
+
+void moonbitlang_async_tls_ssl_ctx_free(SSL_CTX *ctx) {
+  SSL_CTX_free(ctx);
+}
+
+int moonbitlang_async_tls_ssl_ctx_add_root_certificate(
+  SSL_CTX *ctx,
+  const unsigned char *der
+) {
+  const unsigned char *p = der;
+  X509 *cert = d2i_X509(0, &p, Moonbit_array_length(der));
+  if (!cert) return 0;
+
+  X509_STORE *store = SSL_CTX_get_cert_store(ctx);
+  if (!store) {
+    X509_free(cert);
+    return 0;
+  }
+
+  int ret = X509_STORE_add_cert(store, cert);
+  X509_free(cert);
+  return ret;
+}
+
+SSL *moonbitlang_async_tls_ssl_new(SSL_CTX *ctx, BIO *rbio, BIO *wbio) {
+  SSL *ssl = SSL_new(ctx);
+  if (!ssl) return ssl;
+
+  SSL_set_bio(ssl, rbio, wbio);
+  return ssl;
+}
+
+int moonbitlang_async_tls_ssl_connect(SSL *ssl) {
+  return SSL_connect(ssl);
+}
+
+int moonbitlang_async_tls_ssl_set_host(SSL *ssl, const char *host) {
+  return SSL_set1_host(ssl, host);
+}
+
+int moonbitlang_async_tls_ssl_set_sni(SSL *ssl, void *host) {
+  return SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, host);
+}
+
+void moonbitlang_async_tls_ssl_set_verify(SSL *ssl, int verify) {
+  SSL_set_verify(ssl, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, 0);
+}
+
+int moonbitlang_async_tls_ssl_accept(SSL *ssl) {
+  return SSL_accept(ssl);
+}
+
+int moonbitlang_async_tls_ssl_use_certificate_file(
+  SSL *ssl,
+  const char *file,
+  int type
+) {
+  return SSL_use_certificate_file(ssl, file, type);
+}
+
+int moonbitlang_async_tls_ssl_use_private_key_file(
+  SSL *ssl,
+  const char *file,
+  int type
+) {
+  return SSL_use_PrivateKey_file(ssl, file, type);
+}
+
+int moonbitlang_async_tls_ssl_read(SSL *ssl, char *buf, int offset, int num) {
+  return SSL_read(ssl, buf + offset, num);
+}
+
+int moonbitlang_async_tls_ssl_write(SSL *ssl, char *buf, int offset, int num) {
+  return SSL_write(ssl, buf + offset, num);
+}
+
+int moonbitlang_async_tls_ssl_shutdown(SSL *ssl) {
+  return SSL_shutdown(ssl);
+}
+
+void moonbitlang_async_tls_ssl_free(SSL *ssl) {
+  SSL_free(ssl);
+}
+
+moonbit_bytes_t moonbitlang_async_tls_ssl_get_peer_certificate(SSL *ssl) {
+  X509 *cert = SSL_get1_peer_certificate(ssl);
+  if (!cert) return 0;
+
+  int len = i2d_X509_AUX(cert, 0);
+  if (len < 0) goto handle_error;
+
+  moonbit_bytes_t result = moonbit_make_bytes_raw(len);
+  unsigned char *buf = result;
+  i2d_X509_AUX(cert, &buf);
+  X509_free(cert);
+  return result;
+
+handle_error:
+  X509_free(cert);
+  return 0;
+}
+
+static
+moonbit_bytes_t hash_server_endpoint_certificate(X509 *cert) {
+  int signature_nid = X509_get_signature_nid(cert);
+  int digest_nid = 0;
+  int public_key_nid = 0;
+  const EVP_MD *digest = 0;
+  const char *digest_name = 0;
+  unsigned int digest_len = 0;
+  unsigned char digest_buf[MAX_DIGEST_LEN];
+
+  if (!OBJ_find_sigid_algs(signature_nid, &digest_nid, &public_key_nid))
+    return 0;
+
+  digest_name = OBJ_nid2sn(digest_nid);
+  if (!digest_name)
+    return 0;
+
+  if (strcmp(digest_name, "MD5") == 0 || strcmp(digest_name, "SHA1") == 0) {
+    digest = EVP_sha256();
+  } else {
+    digest = EVP_get_digestbyname(digest_name);
+  }
+
+  if (!digest)
+    return 0;
+
+  if (!X509_digest(cert, digest, digest_buf, &digest_len))
+    return 0;
+
+  moonbit_bytes_t result = moonbit_make_bytes_raw(digest_len);
+  memcpy(result, digest_buf, digest_len);
+  return result;
+}
+
+moonbit_bytes_t moonbitlang_async_tls_ssl_unique_channel_binding(SSL *ssl, int32_t is_client) {
+  size_t len = is_client ?
+    SSL_get_finished(ssl, 0, 0) :
+    SSL_get_peer_finished(ssl, 0, 0);
+  if (len == 0)
+    return 0;
+
+  moonbit_bytes_t result = moonbit_make_bytes_raw(len);
+  size_t copied = is_client ?
+    SSL_get_finished(ssl, result, len) :
+    SSL_get_peer_finished(ssl, result, len);
+  if (copied != len)
+    return 0;
+  return result;
+}
+
+moonbit_bytes_t moonbitlang_async_tls_ssl_server_endpoint_channel_binding(SSL *ssl, int32_t is_client) {
+  if (is_client) {
+    X509 *cert = SSL_get1_peer_certificate(ssl);
+    if (!cert)
+      return 0;
+    moonbit_bytes_t result = hash_server_endpoint_certificate(cert);
+    X509_free(cert);
+    return result;
+  } else {
+    X509 *cert = SSL_get_certificate(ssl);
+    if (!cert)
+      return 0;
+    return hash_server_endpoint_certificate(cert);
+  }
+}
+
+int moonbitlang_async_tls_ssl_get_error(SSL *ssl, int ret) {
+  return SSL_get_error(ssl, ret);
+}
+
+uint64_t moonbitlang_async_tls_peek_error_code() {
+  return ERR_peek_error();
+}
+
+int moonbitlang_async_tls_get_error(void *buf) {
+  unsigned long code = ERR_get_error();
+  ERR_error_string(code, buf);
+  return strlen(buf);
+}
+
+int moonbitlang_async_tls_rand_bytes(unsigned char *buf, int num) {
+  return RAND_bytes(buf, num);
+}
+
+void moonbitlang_async_tls_SHA1(
+  moonbit_bytes_t src,
+  int32_t len,
+  moonbit_bytes_t dst
+) {
+  SHA1(src, len, dst);
+}
+
+#endif

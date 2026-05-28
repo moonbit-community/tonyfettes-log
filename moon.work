@@ -1,0 +1,7 @@
+members = [
+  "sync",
+  "xlog",
+  "slog",
+  "alog",
+]
+preferred_target = "native"

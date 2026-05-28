@@ -1,0 +1,14 @@
+import {
+  "tonyfettes/sync/internal/fd_util",
+  "tonyfettes/sync/internal/event_loop",
+}
+
+import {
+  "tonyfettes/sync/pipe",
+} for "test"
+
+supported_targets = "-all+native"
+
+options(
+  "native-stub": [ "stub.c" ],
+)

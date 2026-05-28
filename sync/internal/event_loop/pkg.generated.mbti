@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/sync/internal/event_loop"
+
+import {
+  "tonyfettes/sync/internal/fd_util",
+}
+
+// Values
+pub const IS_WINDOWS : Bool = false
+
+pub fn getaddrinfo(StringView, context~ : String) -> Result[AddrInfo, String] raise
+
+pub fn kind_of_fd(Int, context~ : String) -> @fd_util.FileKind raise
+
+pub let platform : Platform
+
+pub fn register_hook(init? : () -> Unit raise, exit? : () -> Unit raise) -> Unit
+
+// Errors
+
+// Types and methods
+#external
+pub type AddrInfo
+
+type IoHandle
+pub fn IoHandle::accept(Self, Bytes, context~ : String) -> Self raise
+pub fn IoHandle::bind(Self, Bytes, context~ : String) -> Unit raise
+pub fn IoHandle::close(Self) -> Unit
+pub fn IoHandle::connect(Self, Bytes, context~ : String) -> Unit raise
+pub fn IoHandle::detach_from_event_loop(Self) -> Int
+pub fn IoHandle::fd(Self) -> Int
+pub fn IoHandle::from_fd(Int, kind~ : @fd_util.FileKind, is_async? : Bool) -> Self raise
+pub fn IoHandle::kind(Self) -> @fd_util.FileKind
+pub fn IoHandle::read(Self, FixedArray[Byte], offset~ : Int, len~ : Int, context~ : String) -> Int raise
+pub fn IoHandle::recvfrom(Self, FixedArray[Byte], offset~ : Int, len~ : Int, addr~ : Bytes, context~ : String) -> Int raise
+pub fn IoHandle::sendto(Self, Bytes, offset~ : Int, len~ : Int, addr~ : Bytes, context~ : String) -> Int raise
+pub fn IoHandle::write(Self, Bytes, offset~ : Int, len~ : Int, context~ : String) -> Int raise
+
+pub(all) enum Platform {
+  Linux
+  MacOS
+  Windows
+}
+
+// Type aliases
+
+// Traits
+

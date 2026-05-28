@@ -1,0 +1,10 @@
+supported_targets = "native"
+
+import {
+  "tonyfettes/sync/io",
+  "tonyfettes/sync/os_error",
+}
+
+options(
+  "native-stub": [ "native.c" ],
+)
