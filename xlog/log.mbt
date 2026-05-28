@@ -1,4 +1,7 @@
 ///|
+/// A structured logger that emits entries through a `Handler`.
+///
+/// Logger calls are best-effort: errors raised by the handler are ignored.
 struct Logger {
   mut handler : &Handler
   mut level : Level
@@ -7,12 +10,22 @@ struct Logger {
 }
 
 ///|
+/// Log levels ordered from most severe to most verbose.
+///
+/// A record is emitted when its level is less than or equal to the effective
+/// logger level.
 pub(all) enum Level {
+  /// A fatal failure.
   Fatal
+  /// An error that should be investigated.
   Error
+  /// A warning about a degraded or unexpected condition.
   Warn
+  /// General operational information.
   Info
+  /// Detailed diagnostic information.
   Debug
+  /// Very verbose diagnostic information.
   Trace
 } derive(Eq, Compare)
 
@@ -34,6 +47,11 @@ pub impl Show for Level with fn output(self, logger) -> Unit {
 }
 
 ///|
+/// Create a logger that writes to `handler`.
+///
+/// The default level is `Info`. When `config` is provided, its root level is
+/// used as the logger level and category-specific overrides are consulted for
+/// each entry.
 pub fn[H : Handler] Logger::Logger(
   handler : H,
   level? : Level = Info,
@@ -45,6 +63,11 @@ pub fn[H : Handler] Logger::Logger(
 }
 
 ///|
+/// Create a child logger with an optional appended category segment.
+///
+/// Parent and child categories are joined with `.`. The child keeps the level
+/// it is created with, so later `set_level` calls on the parent do not affect
+/// existing children.
 pub fn Logger::child(
   self : Logger,
   category? : String,
@@ -108,27 +131,35 @@ fn Logger::is_level_enabled_for_category(
 }
 
 ///|
+/// Replace the handler used by this logger.
 pub fn[H : Handler] Logger::set_handler(self : Logger, handler : H) -> Unit {
   self.handler = handler
 }
 
 ///|
+/// Install a configuration object and reset the logger's root level from it.
 pub fn Logger::set_config(self : Logger, config : Config) -> Unit {
   self.config = Some(config)
   self.level = config.level
 }
 
 ///|
+/// Set the logger's root level.
+///
+/// Category-specific overrides from an installed `Config` still take
+/// precedence for matching categories.
 pub fn Logger::set_level(self : Logger, level : Level) -> Unit {
   self.level = level
 }
 
 ///|
+/// Return this logger's category, if it has one.
 pub fn Logger::category(self : Logger) -> String? {
   self.category
 }
 
 ///|
+/// Emit a `Fatal` entry.
 #callsite(autofill(loc))
 pub fn Logger::fatal(
   self : Logger,
@@ -140,6 +171,7 @@ pub fn Logger::fatal(
 }
 
 ///|
+/// Emit an `Error` entry.
 #callsite(autofill(loc))
 pub fn Logger::error(
   self : Logger,
@@ -151,6 +183,7 @@ pub fn Logger::error(
 }
 
 ///|
+/// Emit a `Warn` entry.
 #callsite(autofill(loc))
 pub fn Logger::warn(
   self : Logger,
@@ -162,6 +195,7 @@ pub fn Logger::warn(
 }
 
 ///|
+/// Emit an `Info` entry.
 #callsite(autofill(loc))
 pub fn Logger::info(
   self : Logger,
@@ -173,6 +207,7 @@ pub fn Logger::info(
 }
 
 ///|
+/// Emit a `Debug` entry.
 #callsite(autofill(loc))
 pub fn Logger::debug(
   self : Logger,
@@ -184,6 +219,7 @@ pub fn Logger::debug(
 }
 
 ///|
+/// Emit a `Trace` entry.
 #callsite(autofill(loc))
 pub fn Logger::trace(
   self : Logger,
@@ -205,11 +241,16 @@ fn default_config() -> Config {
 let global_logger : Logger = Logger(Stdout(), config=default_config())
 
 ///|
+/// Return the process-wide root logger used by top-level logging helpers.
+///
+/// The returned logger can be configured with `set_handler`, `set_config`, and
+/// `set_level`.
 pub fn global() -> Logger {
   global_logger
 }
 
 ///|
+/// Emit a `Fatal` entry with the global logger.
 #callsite(autofill(loc))
 pub fn fatal(
   message : String,
@@ -221,6 +262,7 @@ pub fn fatal(
 }
 
 ///|
+/// Emit an `Error` entry with the global logger.
 #callsite(autofill(loc))
 pub fn error(
   message : String,
@@ -232,6 +274,7 @@ pub fn error(
 }
 
 ///|
+/// Emit a `Warn` entry with the global logger.
 #callsite(autofill(loc))
 pub fn warn(
   message : String,
@@ -243,6 +286,7 @@ pub fn warn(
 }
 
 ///|
+/// Emit an `Info` entry with the global logger.
 #callsite(autofill(loc))
 pub fn info(
   message : String,
@@ -254,6 +298,7 @@ pub fn info(
 }
 
 ///|
+/// Emit a `Debug` entry with the global logger.
 #callsite(autofill(loc))
 pub fn debug(
   message : String,
@@ -265,6 +310,7 @@ pub fn debug(
 }
 
 ///|
+/// Emit a `Trace` entry with the global logger.
 #callsite(autofill(loc))
 pub fn trace(
   message : String,

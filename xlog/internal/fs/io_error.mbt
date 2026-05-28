@@ -1,5 +1,7 @@
 ///|
+/// Error raised by the native file wrapper.
 pub(all) suberror IOError {
+  /// The file operation failure message.
   IOError(String)
 }
 

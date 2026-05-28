@@ -1,10 +1,17 @@
 ///|
+/// A structured log record passed to handlers.
 pub struct Entry {
+  /// The severity level of the record.
   level : Level
+  /// The optional category associated with the record.
   category : String?
+  /// The timestamp captured when the record was created.
   timestamp : @x/time.ZonedDateTime
+  /// The source location captured from the logging callsite, if available.
   source : SourceLoc?
+  /// The human-readable log message.
   message : String
+  /// Structured fields attached to the record.
   fields : Map[String, Json]
 }
 

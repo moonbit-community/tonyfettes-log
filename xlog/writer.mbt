@@ -1,20 +1,32 @@
 ///|
+/// A sink that receives structured log entries.
+///
+/// Direct handler calls may raise errors. Logger methods catch and ignore those
+/// errors so logging failures do not interrupt application code.
 pub(open) trait Handler {
+  /// Write or otherwise process one log entry.
   fn handle(Self, Entry) -> Unit raise
 }
 
 ///|
+/// Output format used by built-in handlers.
 pub(all) enum Format {
+  /// Human-readable key-value text.
   Text
+  /// One JSON object per line.
   Jsonl
 }
 
 ///|
+/// A handler that writes log entries to standard output.
 struct Stdout {
   format : Format
 }
 
 ///|
+/// Create a standard-output handler.
+///
+/// The default format is `Text`.
 pub fn Stdout::Stdout(format? : Format = Text) -> Stdout {
   Stdout::{ format, }
 }
@@ -28,11 +40,17 @@ pub impl Handler for Stdout with fn handle(self : Stdout, entry : Entry) -> Unit
 }
 
 ///|
+/// Error raised by `Multi` when one or more child handlers fail.
 pub(all) suberror MultiError {
+  /// The errors collected from failing child handlers.
   MultiError(Array[Error])
 }
 
 ///|
+/// A handler that fans out each entry to multiple child handlers.
+///
+/// Every child handler is attempted. If any fail, `MultiError` is raised after
+/// all handlers have been called.
 pub(all) struct Multi(Array[&Handler])
 
 ///|
@@ -49,12 +67,19 @@ pub impl Handler for Multi with fn handle(self : Multi, entry : Entry) -> Unit {
 }
 
 ///|
+/// A handler that appends log entries to a file.
+///
+/// `File` is native-only. It keeps the file open until `close` is called or the
+/// handler becomes unreachable.
 struct File {
   format : Format
   file : @fs.File
 }
 
 ///|
+/// Open a file handler in append mode.
+///
+/// The default format is `Jsonl`.
 pub fn File::File(
   path : String,
   format? : Format = Jsonl,
@@ -76,6 +101,9 @@ fn File::write_entry(self : File, entry : Entry) -> Unit raise @fs.IOError {
 }
 
 ///|
+/// Close the file handle.
+///
+/// Calling `close` more than once is safe.
 pub fn File::close(self : File) -> Unit {
   @fs.File::close(self.file)
 }

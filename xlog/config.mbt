@@ -1,22 +1,36 @@
 ///|
+/// Logging configuration with a root level and category-specific overrides.
+///
+/// Category overrides are hierarchical: `app.db.query` falls back to `app.db`,
+/// then `app`, then the logger's root level.
 struct Config {
   mut level : Level
   levels : Map[String, Level]
 }
 
 ///|
+/// Create a configuration with the given root level.
 pub fn Config::Config(level? : Level = Info) -> Config {
   Config::{ level, levels: {} }
 }
 
 ///|
+/// Errors raised when parsing or updating logger configuration.
 pub(all) suberror ConfigError {
+  /// The category name is empty or contains invalid dot placement.
   InvalidCategory(String)
+  /// The configuration string contains an empty or malformed directive.
   InvalidDirective(String)
+  /// The level name is not one of the supported `Level` values.
   InvalidLevel(String)
 }
 
 ///|
+/// Read configuration from an environment variable.
+///
+/// `env` defaults to `MOON_XLOG`. The value is a comma-separated list of
+/// directives: either a root level such as `debug`, or a category override such
+/// as `app.db=trace`.
 pub fn Config::from_env(
   env? : String = "MOON_XLOG",
   level? : Level = Info,
@@ -28,6 +42,10 @@ pub fn Config::from_env(
 }
 
 ///|
+/// Set a level override for a category.
+///
+/// Category names must be non-empty dot-separated segments, with no leading
+/// dot, trailing dot, or empty segment.
 pub fn Config::set_category_level(
   self : Config,
   category : String,
