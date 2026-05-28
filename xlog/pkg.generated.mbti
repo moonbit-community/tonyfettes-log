@@ -11,13 +11,13 @@ import {
 #callsite(autofill(loc))
 pub fn debug(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
-pub fn default() -> Logger
-
 #callsite(autofill(loc))
 pub fn error(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 #callsite(autofill(loc))
 pub fn fatal(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+
+pub fn global() -> Logger
 
 #callsite(autofill(loc))
 pub fn info(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit

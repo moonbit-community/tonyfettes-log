@@ -38,7 +38,7 @@ fn test_entry(message : String) -> Entry {
 ///|
 test "package-level functions use the default logger" {
   let entries : Array[Entry] = []
-  let logger = default()
+  let logger = global()
   defer {
     logger.set_handler(Stdout())
     logger.set_config(Config::new())

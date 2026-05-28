@@ -205,11 +205,11 @@ fn default_config() -> Config {
 }
 
 ///|
-let default_logger : Logger = Logger(Stdout(), config=default_config())
+let global_logger : Logger = Logger(Stdout(), config=default_config())
 
 ///|
-pub fn default() -> Logger {
-  default_logger
+pub fn global() -> Logger {
+  global_logger
 }
 
 ///|
@@ -220,7 +220,7 @@ pub fn fatal(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  default().log(Fatal, message, fields?, category?, loc~)
+  global().log(Fatal, message, fields?, category?, loc~)
 }
 
 ///|
@@ -231,7 +231,7 @@ pub fn error(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  default().log(Error, message, fields?, category?, loc~)
+  global().log(Error, message, fields?, category?, loc~)
 }
 
 ///|
@@ -242,7 +242,7 @@ pub fn warn(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  default().log(Warn, message, fields?, category?, loc~)
+  global().log(Warn, message, fields?, category?, loc~)
 }
 
 ///|
@@ -253,7 +253,7 @@ pub fn info(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  default().log(Info, message, fields?, category?, loc~)
+  global().log(Info, message, fields?, category?, loc~)
 }
 
 ///|
@@ -264,7 +264,7 @@ pub fn debug(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  default().log(Debug, message, fields?, category?, loc~)
+  global().log(Debug, message, fields?, category?, loc~)
 }
 
 ///|
@@ -275,5 +275,5 @@ pub fn trace(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  default().log(Trace, message, fields?, category?, loc~)
+  global().log(Trace, message, fields?, category?, loc~)
 }

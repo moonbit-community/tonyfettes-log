@@ -1,334 +1,123 @@
 # xlog
 
-`tonyfettes/xlog` is a small native-only structured logger experiment for
-MoonBit. It provides synchronous logging to stdout and append-mode files, with
-levels, categories, source locations, structured fields, text output, JSON-line
-output, and environment-based filtering.
+`tonyfettes/xlog` is a native-only structured logger with top-level helpers,
+logger instances, categories, structured fields, stdout/file/multi outputs, and
+`MOON_XLOG` filtering.
 
-The package is intentionally best-effort: ordinary logging calls do not raise if
-the output handler fails. Handlers can report errors when called directly or
-when wrapped by another handler, following the same general direction as Go's
-`log/slog`.
-
-## Target
-
-`xlog` supports the native backend only.
-
-```moonbit
-supported_targets = "native"
-```
-
-File output is implemented by `tonyfettes/xlog/internal/fs` with a tiny ISO C
-`FILE *` append-mode stub. Files must be closed explicitly by the caller.
+Logger calls are best-effort: output errors are ignored by `Logger`, while
+handlers can still report errors when called directly or wrapped.
 
 ## Quick Start
 
-```moonbit
-///|
-fn main {
-  let logger = @xlog.Logger(@xlog.Stdout())
-  logger.info("server started", fields={
-    "addr": "127.0.0.1:8080",
-    "workers": 4,
-  })
-}
-```
-
-By default, a logger starts at `Info`, so `Fatal`, `Error`, `Warn`, and `Info`
-records are emitted, while `Debug` and `Trace` records are filtered out.
+Use top-level helpers when passing a logger around would be noisy:
 
 ```moonbit
-///|
-fn main {
-  let logger = @xlog.Logger(@xlog.Stdout(), level=@xlog.Debug)
-  logger.debug("debug is visible")
-  logger.trace("trace is still hidden")
-}
+@xlog.info("server started", category="app", fields={ "port": 8080 })
+@xlog.debug("query plan", category="app.db")
 ```
 
-## Levels
+Use a `Logger` when you want explicit category context or a specific output:
 
-Levels are ordered from most severe to most verbose:
+```moonbit
+let logger = @xlog.Logger(@xlog.Stdout(), category="app")
+let db = logger.child(category="db")
+
+logger.info("server started")
+db.debug("query plan")
+```
+
+## Levels And Categories
+
+The default level is `Info`. Level order, from least to most verbose:
 
 ```text
-Fatal < Error < Warn < Info < Debug < Trace
+Fatal Error Warn Info Debug Trace
 ```
 
-A record is emitted when its level is less than or equal to the effective logger
-level. With the default `Info` level:
+A record is emitted when its level is less than or equal to the effective level.
+Category overrides are hierarchical, so `app.db.query` falls back to `app.db`,
+then `app`, then the logger's level.
 
-- emitted: `Fatal`, `Error`, `Warn`, `Info`
-- filtered: `Debug`, `Trace`
-
-## Output Formats
-
-`Stdout` defaults to human-readable text:
-
-```moonbit
-let logger = @xlog.Logger(@xlog.Stdout())
-logger.warn("using fallback config", fields={ "source": "default" })
-```
-
-`Stdout(format=@xlog.Jsonl)` emits one JSON object per line:
-
-```moonbit
-let logger = @xlog.Logger(@xlog.Stdout(format=@xlog.Jsonl))
-logger.info("request completed", fields={
-  "method": "GET",
-  "status": 200,
-})
-```
-
-`File` defaults to `Jsonl` because that is the safer format for appending log
-records to a file:
-
-```moonbit
-let file = @xlog.File("_build/app.log")
-defer file.close()
-
-let logger = @xlog.Logger(file)
-logger.error("write failed", fields={ "path": "/tmp/report.txt" })
-```
-
-Use `format=@xlog.Text` when a plain text file is preferred:
-
-```moonbit
-let file = @xlog.File("_build/app.log", format=@xlog.Text)
-defer file.close()
-
-let logger = @xlog.Logger(file)
-logger.info("plain text line")
-```
-
-## Entries
-
-Each emitted record is represented as an `Entry`:
-
-```moonbit
-pub struct Entry {
-  level : Level
-  category : String?
-  timestamp : @time.ZonedDateTime
-  source : SourceLoc?
-  message : String
-  fields : Map[String, Json]
-}
-```
-
-The public logging functions use `#callsite(autofill(loc))`, so `source` points
-at the callsite that invoked `info`, `warn`, `debug`, and the other severity
-methods.
-
-`fields` is a `Map[String, Json]`. String, integer, boolean, array, object, and
-other JSON-compatible values can be passed through the usual MoonBit JSON
-conversion path:
-
-```moonbit
-logger.info("job finished", fields={
-  "job": "nightly-index",
-  "attempt": 2,
-  "cached": true,
-})
-```
-
-## Categories
-
-A `Logger` may have an optional category. Child loggers extend that category
-with dot-separated names:
+Child loggers append category segments:
 
 ```moonbit
 let app = @xlog.Logger(@xlog.Stdout(), category="app")
-let db = app.child(category="db")
-let query = db.child(category="query")
-
-app.info("started")       // category: app
-db.debug("connected")     // category: app.db
-query.trace("selected")   // category: app.db.query
+let db = app.child(category="db") // app.db
 ```
 
-`Logger::info`, `Logger::debug`, and the other logger methods do not accept a
-per-call category. If you already have a logger, use `child(category=...)` to
-make category context explicit.
-
-Top-level helpers are different: they are convenience functions for places
-where passing a logger is inconvenient. They accept `category?`:
-
-```moonbit
-@xlog.info("migration started", category="db")
-@xlog.debug("selected batch", category="db.query")
-```
+Logger methods do not take per-call categories. Use `child(category=...)` for
+logger instances, and `category="..."` for top-level helpers.
 
 ## Configuration
 
-`Config` controls the default level and category-specific overrides:
+`Config::from_env()` reads `MOON_XLOG` by default:
+
+```sh
+MOON_XLOG=debug
+MOON_XLOG='warn,app.db=debug,app.db.query=trace'
+```
+
+You can also build config directly:
 
 ```moonbit
 let config = @xlog.Config::new(level=@xlog.Warn)
 config.set_category_level("app.db", @xlog.Debug)
-config.set_category_level("app.db.query", @xlog.Trace)
 
 let logger = @xlog.Logger(@xlog.Stdout(), category="app", config~)
-let db = logger.child(category="db")
-let query = db.child(category="query")
-
-logger.info("hidden")
-logger.warn("visible")
-db.debug("visible")
-query.trace("visible")
 ```
 
-Category overrides are hierarchical. If `app.db.query` has no override, `xlog`
-checks `app.db`, then `app`, then the logger's default level.
+Invalid levels, invalid directives, and invalid categories raise `ConfigError`.
+The package global logger catches invalid `MOON_XLOG` and falls back to `Info`.
 
-Valid category names are non-empty and must not start with `.`, end with `.`, or
-contain `..`.
+## Outputs
 
-## MOON_XLOG
+`Stdout` defaults to text output. Use `Jsonl` for one JSON object per line:
 
-`Config::from_env()` reads `MOON_XLOG` by default.
+```moonbit
+@xlog.global().set_handler(@xlog.Stdout())
+@xlog.global().set_handler(@xlog.Stdout(format=@xlog.Jsonl))
+```
+
+`File` opens an append-mode file and defaults to `Jsonl`:
+
+```moonbit
+let file = @xlog.File("_build/app.log")
+defer file.close()
+
+@xlog.global().set_handler(file)
+@xlog.info("written to file", category="app")
+```
+
+`File` is native-only, uses a small ISO C `FILE *` stub, requires explicit
+`close()`, and does not provide multi-process atomic logging guarantees.
+
+`Multi` fans out to several handlers:
+
+```moonbit
+let file = @xlog.File("_build/app.log")
+defer file.close()
+
+let handlers : Array[&@xlog.Handler] = [@xlog.Stdout(), file]
+@xlog.global().set_handler(@xlog.Multi(handlers))
+```
+
+`Multi` attempts every child handler. Direct `Multi.handle(entry)` calls can
+raise `MultiError(Array[Error])`; ordinary logger calls swallow that error.
+
+## Global Logger
+
+Top-level helpers use `@xlog.global()`, a process-wide root logger:
 
 ```moonbit
 let config = @xlog.Config::from_env() catch { _ => @xlog.Config::new() }
-let logger = @xlog.Logger(@xlog.Stdout(), category="app", config~)
+
+@xlog.global().set_config(config)
+@xlog.global().set_level(@xlog.Debug)
+@xlog.info("top-level record", category="app")
 ```
 
-The environment value is comma-separated:
-
-```text
-MOON_XLOG=debug
-MOON_XLOG=warn,app.db=debug,app.db.query=trace
-MOON_XLOG=error,lorem.cache=debug,lorem.export.markdown=trace
-```
-
-The first form sets the default level. The second form sets a default level and
-then overrides specific categories.
-
-Invalid levels, invalid categories, and malformed directives raise
-`ConfigError` from `Config::from_env`. The package-level default logger catches
-that error and falls back to `Info`.
-
-## Package-Level Default Logger
-
-`@xlog.default()` returns the process-wide root logger used by top-level helper
-functions:
-
-```moonbit
-@xlog.info("hello")
-@xlog.warn("using default logger", category="app.config")
-```
-
-Configure that root logger through setters:
-
-```moonbit
-let file = @xlog.File("_build/app.log")
-defer file.close()
-
-@xlog.default().set_handler(file)
-@xlog.default().set_level(@xlog.Debug)
-@xlog.default().set_config(@xlog.Config::from_env() catch { _ => @xlog.Config::new() })
-
-@xlog.debug("debug record", category="app")
-```
-
-`default()` is always the root logger. It is not replaced wholesale with another
-logger, which avoids accidentally installing a categorized logger as the global
-default.
-
-## Handlers
-
-`Handler` is the output boundary:
-
-```moonbit
-pub(open) trait Handler {
-  fn handle(Self, Entry) -> Unit raise
-}
-```
-
-Built-in handlers:
-
-- `Stdout(format?)`: writes to standard output.
-- `File(path, format?)`: appends to a file and must be explicitly closed.
-- `Multi(Array[&Handler])`: fans out to several handlers.
-
-Ordinary logger calls are best-effort. If `handler.handle(entry)` raises,
-`Logger` catches and ignores the error:
-
-```moonbit
-let file = @xlog.File("_build/app.log")
-file.close()
-
-let logger = @xlog.Logger(file)
-logger.info("this does not raise")
-```
-
-Use a wrapper handler if you need to observe output errors. The wrapper can call
-an inner handler, catch the error, record it somewhere else, and then re-raise
-or swallow it. `Logger` will still keep ordinary logging calls non-raising.
-
-## Multi
-
-`Multi` attempts every child handler. It collects failures and raises
-`MultiError(Array[Error])` after every handler has been attempted:
-
-```moonbit
-let stdout = @xlog.Stdout()
-let file = @xlog.File("_build/app.log")
-defer file.close()
-
-let handlers : Array[&@xlog.Handler] = [stdout, file]
-let logger = @xlog.Logger(@xlog.Multi(handlers))
-logger.info("written to both handlers")
-```
-
-When `Multi` is used through `Logger`, its `MultiError` is swallowed like any
-other handler error. When `Multi.handle(entry)` is called directly, callers can
-catch and inspect `MultiError`.
-
-## File Output
-
-`File` opens paths in append-only mode and writes one formatted record per
-handler call.
-
-```moonbit
-let file = @xlog.File("_build/events.jsonl")
-defer file.close()
-
-let logger = @xlog.Logger(file)
-logger.info("event accepted", fields={ "id": 1001 })
-```
-
-Important details:
-
-- The package is native-only.
-- The C stub uses ISO C `FILE *` APIs.
-- `File::close()` is explicit and does not raise.
-- Writes after `close()` fail when the file handler is called directly.
-- Logger methods swallow handler errors, including file write errors.
-- There is no multi-process atomic logging guarantee.
-
-## Error Types
-
-`ConfigError` reports configuration parsing failures:
-
-```moonbit
-pub(all) suberror ConfigError {
-  InvalidCategory(String)
-  InvalidDirective(String)
-  InvalidLevel(String)
-}
-```
-
-`MultiError` reports handler fanout failures:
-
-```moonbit
-pub(all) suberror MultiError {
-  MultiError(Array[Error])
-}
-```
-
-The internal filesystem package also defines `IOError(String)` for native file
-open, write, and flush failures. Public `File::File(path)` can raise that error
-when opening fails.
+`global()` is a root logger, not a replaceable default logger. Configure it with
+`set_handler`, `set_config`, and `set_level`.
 
 ## Example
 
@@ -338,49 +127,4 @@ The `examples/lorem` package demonstrates category filtering:
 moon run examples/lorem
 MOON_XLOG=debug moon run examples/lorem
 MOON_XLOG='warn,lorem.db=trace,lorem.worker=debug,lorem.parser.lexer=trace' moon run examples/lorem
-MOON_XLOG='error,lorem.cache=debug,lorem.export.markdown=trace,lorem.ui=debug' moon run examples/lorem
-```
-
-Run those commands from the `xlog` module root.
-
-## Public API Summary
-
-Common constructors and functions:
-
-```moonbit
-@xlog.Logger(handler, level?, category?, config?)
-@xlog.Stdout(format?)
-@xlog.File(path, format?)
-@xlog.Multi(handlers)
-@xlog.Config::new(level?)
-@xlog.Config::from_env(env?, level?)
-@xlog.default()
-```
-
-Logger methods:
-
-```moonbit
-logger.fatal(message, fields?)
-logger.error(message, fields?)
-logger.warn(message, fields?)
-logger.info(message, fields?)
-logger.debug(message, fields?)
-logger.trace(message, fields?)
-
-logger.child(category?, level?)
-logger.set_handler(handler)
-logger.set_config(config)
-logger.set_level(level)
-logger.category()
-```
-
-Top-level helpers:
-
-```moonbit
-@xlog.fatal(message, fields?, category?)
-@xlog.error(message, fields?, category?)
-@xlog.warn(message, fields?, category?)
-@xlog.info(message, fields?, category?)
-@xlog.debug(message, fields?, category?)
-@xlog.trace(message, fields?, category?)
 ```

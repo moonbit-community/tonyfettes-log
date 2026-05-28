@@ -21,8 +21,8 @@ quick reference for the public surface of each experiment.
 `xlog` is the baseline implementation. It exposes a `Logger`, a `Handler` trait,
 `Stdout`, `File`, `Multi`, `Format`, `Config`, and package-level default logger
 functions such as `info` and `debug`. The package-level default root logger is
-configured through `default().set_handler(...)`, `default().set_config(...)`,
-and `default().set_level(...)`.
+configured through `global().set_handler(...)`, `global().set_config(...)`, and
+`global().set_level(...)`.
 
 Strengths:
 
