@@ -62,7 +62,7 @@ pub struct File {
 }
 pub fn File::File(String, format? : Format) -> Self raise @fs.IOError
 pub fn File::close(Self) -> Unit
-pub impl Writer for File
+pub impl Handler for File
 
 pub(all) enum Format {
   Text
@@ -82,7 +82,7 @@ pub impl Show for Level
 pub struct Logger {
   // private fields
 }
-pub fn[W : Writer] Logger::Logger(W, level? : Level, category? : String, config? : Config) -> Self
+pub fn[H : Handler] Logger::Logger(H, level? : Level, category? : String, config? : Config) -> Self
 pub fn Logger::category(Self) -> String?
 pub fn Logger::child(Self, category? : String, level? : Level) -> Self
 #callsite(autofill(loc))
@@ -101,19 +101,19 @@ pub fn Logger::trace(Self, String, fields? : Map[String, Json], loc~ : SourceLoc
 #callsite(autofill(loc))
 pub fn Logger::warn(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
 
-pub(all) struct Multi(Array[&Writer])
-pub impl Writer for Multi
+pub(all) struct Multi(Array[&Handler])
+pub impl Handler for Multi
 
 pub struct Stdout {
   // private fields
 }
 pub fn Stdout::Stdout(format? : Format) -> Self
-pub impl Writer for Stdout
+pub impl Handler for Stdout
 
 // Type aliases
 
 // Traits
-pub(open) trait Writer {
-  fn write(Self, Entry) -> Unit
+pub(open) trait Handler {
+  fn handle(Self, Entry) -> Unit
 }
 

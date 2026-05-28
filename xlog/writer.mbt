@@ -1,6 +1,6 @@
 ///|
-pub(open) trait Writer {
-  fn write(Self, Entry) -> Unit
+pub(open) trait Handler {
+  fn handle(Self, Entry) -> Unit
 }
 
 ///|
@@ -20,7 +20,7 @@ pub fn Stdout::Stdout(format? : Format = Text) -> Stdout {
 }
 
 ///|
-pub impl Writer for Stdout with fn write(self : Stdout, entry : Entry) -> Unit {
+pub impl Handler for Stdout with fn handle(self : Stdout, entry : Entry) -> Unit {
   match self.format {
     Text => println(entry.to_string())
     Jsonl => println(entry.to_json().stringify())
@@ -28,12 +28,12 @@ pub impl Writer for Stdout with fn write(self : Stdout, entry : Entry) -> Unit {
 }
 
 ///|
-pub(all) struct Multi(Array[&Writer])
+pub(all) struct Multi(Array[&Handler])
 
 ///|
-pub impl Writer for Multi with fn write(self : Multi, entry : Entry) -> Unit {
-  for w in self.0 {
-    w.write(entry)
+pub impl Handler for Multi with fn handle(self : Multi, entry : Entry) -> Unit {
+  for handler in self.0 {
+    handler.handle(entry)
   }
 }
 
@@ -80,7 +80,7 @@ pub fn File::close(self : File) -> Unit {
 }
 
 ///|
-pub impl Writer for File with fn write(self : File, entry : Entry) -> Unit {
+pub impl Handler for File with fn handle(self : File, entry : Entry) -> Unit {
   self.write_entry(entry) catch {
     error => {
       let message = error.to_string()

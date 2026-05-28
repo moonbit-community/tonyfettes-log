@@ -1,6 +1,6 @@
 ///|
 struct Logger {
-  writer : &Writer
+  handler : &Handler
   mut level : Level
   category : String?
   config : Config?
@@ -34,8 +34,8 @@ pub impl Show for Level with fn output(self, logger) -> Unit {
 }
 
 ///|
-pub fn[W : Writer] Logger::Logger(
-  writer : W,
+pub fn[H : Handler] Logger::Logger(
+  handler : H,
   level? : Level = Info,
   category? : String,
   config? : Config,
@@ -44,7 +44,7 @@ pub fn[W : Writer] Logger::Logger(
     Some(config) => config.level
     None => level
   }
-  Logger::{ writer, level, category, config }
+  Logger::{ handler, level, category, config }
 }
 
 ///|
@@ -71,7 +71,7 @@ pub fn Logger::log(
   loc~ : SourceLoc,
 ) -> Unit {
   if self.is_level_enabled(level) {
-    self.writer.write(
+    self.handler.handle(
       Entry(level~, category?=self.category, source=loc, message, fields?),
     )
   }

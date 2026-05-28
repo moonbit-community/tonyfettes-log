@@ -257,8 +257,8 @@ test "multi destination logger writes to all files" {
   defer (for file in files {
     file.close()
   })
-  let writers : Array[&@xlog.Writer] = files.map(file => file)
-  let logger = writers |> @xlog.Multi() |> @xlog.Logger()
+  let handlers : Array[&@xlog.Handler] = files.map(file => file)
+  let logger = handlers |> @xlog.Multi() |> @xlog.Logger()
   logger.info("sync fanout")
   for p in ps {
     guard read_entries(p) is [line] else { fail("expect exactly one line") }

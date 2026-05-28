@@ -1,17 +1,20 @@
 ///|
-struct MemoryWriter {
+struct MemoryHandler {
   entries : Array[Entry]
 }
 
 ///|
-impl Writer for MemoryWriter with fn write(self : MemoryWriter, entry : Entry) -> Unit {
+impl Handler for MemoryHandler with fn handle(
+  self : MemoryHandler,
+  entry : Entry,
+) -> Unit {
   self.entries.push(entry)
 }
 
 ///|
 test "package-level functions use the default logger" {
   let entries : Array[Entry] = []
-  set_default(Logger(MemoryWriter::{ entries, }, level=Debug))
+  set_default(Logger(MemoryHandler::{ entries, }, level=Debug))
   info("global info")
   debug("global debug")
   default_logger.val = None
