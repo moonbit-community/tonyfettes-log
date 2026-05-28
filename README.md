@@ -18,23 +18,24 @@ quick reference for the public surface of each experiment.
 
 ## `xlog`: `moonbitlang/x` Baseline
 
-`xlog` is the baseline implementation. It exposes a `Logger`, a `Writer` trait,
+`xlog` is the baseline implementation. It exposes a `Logger`, a `Handler` trait,
 `Stdout`, `File`, `Multi`, `Format`, `Config`, and package-level default logger
-functions such as `info`, `debug`, and `set_default`.
+functions such as `info` and `debug`. The package-level default root logger is
+configured through `default().set_handler(...)`, `default().set_config(...)`,
+and `default().set_level(...)`.
 
 Strengths:
 
 - Broadest compatibility with the first logger API shape.
 - Includes file and stdout sinks as first-class public types.
-- Supports `MOON_SLOG` parsing, default levels, and hierarchical category
+- Supports `MOON_XLOG` parsing, default levels, and hierarchical category
   overrides.
 - Useful as a regression baseline for behavior and tests.
 
 Tradeoffs:
 
-- The file writer reads the whole file, appends in memory, and rewrites the file
-  for every entry. That keeps the implementation simple, but it is not a good
-  production append strategy.
+- The file writer is native-only and keeps an explicit append-mode file handle,
+  so callers must close it explicitly.
 - Output concerns and sink ownership are bundled into the logger package.
 - It depends on `moonbitlang/x` for I/O.
 

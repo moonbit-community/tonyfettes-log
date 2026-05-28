@@ -23,11 +23,6 @@ pub fn fatal(String, fields? : Map[String, Json], category? : String, loc~ : Sou
 pub fn info(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 #callsite(autofill(loc))
-pub fn log(Level, String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
-
-pub fn set_default(Logger) -> Unit
-
-#callsite(autofill(loc))
 pub fn trace(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 #callsite(autofill(loc))
@@ -93,8 +88,8 @@ pub fn Logger::error(Self, String, fields? : Map[String, Json], loc~ : SourceLoc
 pub fn Logger::fatal(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn Logger::info(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
-#callsite(autofill(loc))
-pub fn Logger::log(Self, Level, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn Logger::set_config(Self, Config) -> Unit
+pub fn[H : Handler] Logger::set_handler(Self, H) -> Unit
 pub fn Logger::set_level(Self, Level) -> Unit
 #callsite(autofill(loc))
 pub fn Logger::trace(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit

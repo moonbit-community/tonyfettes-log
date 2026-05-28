@@ -1,9 +1,9 @@
 ///|
 struct Logger {
-  handler : &Handler
+  mut handler : &Handler
   mut level : Level
   category : String?
-  config : Config?
+  mut config : Config?
 }
 
 ///|
@@ -53,39 +53,68 @@ pub fn Logger::child(
   category? : String,
   level? : Level = self.level,
 ) -> Logger {
-  let category = match (self.category, category) {
-    (None, None) => None
-    (Some(category), None) | (None, Some(category)) => Some(category)
-    (Some(parent), Some(child)) => Some("\{parent}.\{child}")
-  }
+  let category = combine_category(self.category, category)
   Logger::{ ..self, category, level }
 }
 
 ///|
-#callsite(autofill(loc))
-pub fn Logger::log(
-  self : Logger,
-  level : Level,
-  message : String,
-  fields? : Map[String, Json],
-  loc~ : SourceLoc,
-) -> Unit {
-  if self.is_level_enabled(level) {
-    self.handler.handle(
-      Entry(level~, category?=self.category, source=loc, message, fields?),
-    )
+fn combine_category(parent : String?, child : String?) -> String? {
+  match (parent, child) {
+    (None, None) => None
+    (Some(category), None) | (None, Some(category)) => Some(category)
+    (Some(parent), Some(child)) => Some("\{parent}.\{child}")
   }
 }
 
 ///|
-fn Logger::is_level_enabled(self : Logger, level : Level) -> Bool {
-  let effective = if self.config is Some(config) &&
-    self.category is Some(category) {
+#callsite(autofill(loc))
+fn Logger::log(
+  self : Logger,
+  level : Level,
+  message : String,
+  fields? : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  if self.is_level_enabled(level, category?) {
+    let category = combine_category(self.category, category)
+    self.handler.handle(Entry(level~, category?, source=loc, message, fields?))
+  }
+}
+
+///|
+fn Logger::is_level_enabled(
+  self : Logger,
+  level : Level,
+  category? : String,
+) -> Bool {
+  let category = combine_category(self.category, category)
+  self.is_level_enabled_for_category(level, category)
+}
+
+///|
+fn Logger::is_level_enabled_for_category(
+  self : Logger,
+  level : Level,
+  category : String?,
+) -> Bool {
+  let effective = if self.config is Some(config) && category is Some(category) {
     config.get_category_level(category).unwrap_or(self.level)
   } else {
     self.level
   }
   level <= effective
+}
+
+///|
+pub fn[H : Handler] Logger::set_handler(self : Logger, handler : H) -> Unit {
+  self.handler = handler
+}
+
+///|
+pub fn Logger::set_config(self : Logger, config : Config) -> Unit {
+  self.config = Some(config)
+  self.level = config.level
 }
 
 ///|
@@ -195,27 +224,6 @@ pub fn default() -> Logger {
 }
 
 ///|
-pub fn set_default(logger : Logger) -> Unit {
-  default_logger.val = Some(logger)
-}
-
-///|
-#callsite(autofill(loc))
-pub fn log(
-  level : Level,
-  message : String,
-  fields? : Map[String, Json],
-  category? : String,
-  loc~ : SourceLoc,
-) -> Unit {
-  match category {
-    Some(category) =>
-      default().child(category~).log(level, message, fields?, loc~)
-    None => default().log(level, message, fields?, loc~)
-  }
-}
-
-///|
 #callsite(autofill(loc))
 pub fn fatal(
   message : String,
@@ -223,7 +231,7 @@ pub fn fatal(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Fatal, message, fields?, category?, loc~)
+  default().log(Fatal, message, fields?, category?, loc~)
 }
 
 ///|
@@ -234,7 +242,7 @@ pub fn error(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Error, message, fields?, category?, loc~)
+  default().log(Error, message, fields?, category?, loc~)
 }
 
 ///|
@@ -245,7 +253,7 @@ pub fn warn(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Warn, message, fields?, category?, loc~)
+  default().log(Warn, message, fields?, category?, loc~)
 }
 
 ///|
@@ -256,7 +264,7 @@ pub fn info(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Info, message, fields?, category?, loc~)
+  default().log(Info, message, fields?, category?, loc~)
 }
 
 ///|
@@ -267,7 +275,7 @@ pub fn debug(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Debug, message, fields?, category?, loc~)
+  default().log(Debug, message, fields?, category?, loc~)
 }
 
 ///|
@@ -278,5 +286,5 @@ pub fn trace(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Trace, message, fields?, category?, loc~)
+  default().log(Trace, message, fields?, category?, loc~)
 }

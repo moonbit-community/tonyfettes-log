@@ -223,10 +223,12 @@ test "top-level helpers accept category" {
   config.set_category_level("db", Debug)
   let file = @xlog.File(path)
   defer {
-    @xlog.set_default(@xlog.Logger(@xlog.Stdout()))
+    @xlog.default().set_handler(@xlog.Stdout())
+    @xlog.default().set_config(@xlog.Config::new())
     file.close()
   }
-  @xlog.set_default(@xlog.Logger(file, config~))
+  @xlog.default().set_handler(file)
+  @xlog.default().set_config(config)
   @xlog.debug("hidden without category")
   @xlog.debug("db debug", category="db")
   @xlog.info("db info", category="db")

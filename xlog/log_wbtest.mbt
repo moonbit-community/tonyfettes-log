@@ -14,7 +14,10 @@ impl Handler for MemoryHandler with fn handle(
 ///|
 test "package-level functions use the default logger" {
   let entries : Array[Entry] = []
-  set_default(Logger(MemoryHandler::{ entries, }, level=Debug))
+  default_logger.val = None
+  let logger = default()
+  logger.set_handler(MemoryHandler::{ entries, })
+  logger.set_level(Debug)
   info("global info")
   debug("global debug")
   default_logger.val = None
