@@ -100,8 +100,10 @@ fn Logger::is_level_enabled_for_category(
   level : Level,
   category : String?,
 ) -> Bool {
-  let effective = if self.config is Some(config) && category is Some(category) {
-    config.get_category_level(category).unwrap_or(self.level)
+  let effective = if self.config is Some(config) &&
+    category is Some(category) &&
+    config.get_category_level(category) is Some(level) {
+    level
   } else {
     self.level
   }
