@@ -1,6 +1,7 @@
 members = [
   "sync",
   "xlog",
+  "xlog/examples",
   "slog",
   "alog",
 ]
