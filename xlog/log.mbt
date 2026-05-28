@@ -194,7 +194,7 @@ pub fn Logger::trace(
 }
 
 ///|
-let default_logger : Ref[Logger?] = Ref(None)
+let self_log : Array[Entry] = []
 
 ///|
 fn default_config() -> Config {
@@ -211,16 +211,11 @@ fn default_config() -> Config {
 }
 
 ///|
+let default_logger : Logger = Logger(Stdout(), config=default_config())
+
+///|
 pub fn default() -> Logger {
-  match default_logger.val {
-    Some(logger) => logger
-    None => {
-      let config = default_config()
-      let logger = Logger(Stdout(), config~)
-      default_logger.val = Some(logger)
-      logger
-    }
-  }
+  default_logger
 }
 
 ///|

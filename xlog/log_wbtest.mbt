@@ -14,13 +14,15 @@ impl Handler for MemoryHandler with fn handle(
 ///|
 test "package-level functions use the default logger" {
   let entries : Array[Entry] = []
-  default_logger.val = None
   let logger = default()
+  defer {
+    logger.set_handler(Stdout())
+    logger.set_config(Config::new())
+  }
   logger.set_handler(MemoryHandler::{ entries, })
   logger.set_level(Debug)
   info("global info")
   debug("global debug")
-  default_logger.val = None
   guard entries is [info_entry, debug_entry] else {
     fail("expect exactly two entries")
   }
@@ -37,12 +39,10 @@ test "package-level functions use the default logger" {
 }
 
 ///|
-test "default logger reads MOON_XLOG" {
+test "default config reads MOON_XLOG" {
   @env.set_env_var("MOON_XLOG", "debug")
-  default_logger.val = None
-  let logger = default()
+  let logger = Logger(Stdout(), config=default_config())
   @env.unset_env_var("MOON_XLOG")
-  default_logger.val = None
   guard logger.is_level_enabled(Debug) else {
     fail("expect MOON_XLOG to enable debug")
   }
@@ -52,18 +52,21 @@ test "default logger reads MOON_XLOG" {
 }
 
 ///|
-test "default logger falls back on invalid MOON_XLOG" {
+test "default config falls back on invalid MOON_XLOG" {
+  self_log.clear()
   @env.set_env_var("MOON_XLOG", "app..db=debug")
-  default_logger.val = None
-  let logger = default()
+  let logger = Logger(Stdout(), config=default_config())
   @env.unset_env_var("MOON_XLOG")
-  default_logger.val = None
   guard logger.is_level_enabled(Info) else {
     fail("expect invalid MOON_XLOG to fall back to info")
   }
   guard !logger.is_level_enabled(Debug) else {
     fail("expect fallback level to reject debug")
   }
+  guard self_log.length() == 1 else {
+    fail("expect invalid MOON_XLOG to be self logged")
+  }
+  self_log.clear()
 }
 
 ///|

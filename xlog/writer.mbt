@@ -54,9 +54,6 @@ pub fn File::File(
 }
 
 ///|
-let self_log : Array[Entry] = []
-
-///|
 fn File::write_entry(self : File, entry : Entry) -> Unit raise @fs.IOError {
   guard self.file is Some(file) else {
     raise @fs.IOError("@xlog.File::write(): file is closed")
