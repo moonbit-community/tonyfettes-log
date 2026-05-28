@@ -3,8 +3,8 @@ package "tonyfettes/xlog"
 
 import {
   "moonbitlang/core/builtin",
-  "moonbitlang/x/fs",
   "moonbitlang/x/time",
+  "tonyfettes/xlog/internal/fs",
 }
 
 // Values
@@ -61,6 +61,7 @@ pub struct File {
   // private fields
 }
 pub fn File::File(String, format? : Format) -> Self raise @fs.IOError
+pub fn File::close(Self) -> Unit
 pub impl Writer for File
 
 pub(all) enum Format {

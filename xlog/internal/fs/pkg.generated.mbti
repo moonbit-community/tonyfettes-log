@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/xlog/internal/fs"
+
+// Values
+
+// Errors
+pub(all) suberror IOError {
+  IOError(String)
+}
+pub impl Show for IOError
+
+// Types and methods
+type File
+pub fn File::close(Self) -> Unit
+pub fn File::flush(Self) -> Unit raise IOError
+pub fn File::open_append(String) -> Self raise IOError
+pub fn File::write(Self, Bytes) -> Unit raise IOError
+pub fn File::write_string(Self, String) -> Unit raise IOError
+
+// Type aliases
+
+// Traits
+

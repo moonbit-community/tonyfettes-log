@@ -59,3 +59,26 @@ test "default logger falls back on invalid MOON_SLOG" {
     fail("expect fallback level to reject debug")
   }
 }
+
+///|
+test "file close is idempotent and write after close is self logged" {
+  let path = "_build/test.file.closed.self.log"
+  if @x/fs.path_exists(path) {
+    @x/fs.remove_file(path) catch {
+      _ => ()
+    }
+  }
+  self_log.clear()
+  let file = File(path)
+  file.close()
+  file.close()
+  Logger(file).info("after close")
+  guard self_log is [entry] else { fail("expect exactly one self-log entry") }
+  guard entry.level == Error && entry.category == Some("self_log") else {
+    fail("expect self-log error entry")
+  }
+  guard entry.message.contains("file is closed") else {
+    fail("expect write after close to be reported")
+  }
+  self_log.clear()
+}

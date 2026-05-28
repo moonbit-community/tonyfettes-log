@@ -1,0 +1,64 @@
+///|
+#external
+type File
+
+///|
+fn cstring(s : String) -> Bytes {
+  @utf8.encode(s)
+}
+
+///|
+#borrow(path)
+extern "C" fn open_append(path : Bytes) -> File = "tonyfettes_xlog_internal_fs_open_append"
+
+///|
+#borrow(file)
+extern "C" fn is_null(file : File) -> Bool = "tonyfettes_xlog_internal_fs_is_null"
+
+///|
+#borrow(file, data)
+extern "C" fn write(
+  file : File,
+  data : Bytes,
+) -> Int = "tonyfettes_xlog_internal_fs_write"
+
+///|
+#borrow(file)
+extern "C" fn flush(file : File) -> Int = "tonyfettes_xlog_internal_fs_flush"
+
+///|
+#borrow(file)
+extern "C" fn close(file : File) -> Unit = "tonyfettes_xlog_internal_fs_close"
+
+///|
+pub fn File::open_append(path : String) -> File raise IOError {
+  let file = open_append(cstring(path))
+  guard !is_null(file) else {
+    raise IOError("failed to open \{path} for append")
+  }
+  file
+}
+
+///|
+pub fn File::write(self : File, data : Bytes) -> Unit raise IOError {
+  guard write(self, data) == 0 else {
+    raise IOError("@fs.File::write(): failed to write")
+  }
+}
+
+///|
+pub fn File::write_string(self : File, data : String) -> Unit raise IOError {
+  self.write(@utf8.encode(data))
+}
+
+///|
+pub fn File::flush(self : File) -> Unit raise IOError {
+  guard flush(self) == 0 else {
+    raise IOError("@fs.File::flush(): failed to flush")
+  }
+}
+
+///|
+pub fn File::close(self : File) -> Unit {
+  close(self)
+}

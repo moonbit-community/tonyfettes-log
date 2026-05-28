@@ -1,10 +1,17 @@
+supported_targets = "native"
+
 import {
   "moonbitlang/core/env",
-  "moonbitlang/x/fs" @x/fs,
   "moonbitlang/x/time" @x/time,
   "moonbitlang/core/debug",
+  "tonyfettes/xlog/internal/fs",
 }
 
 import {
   "moonbitlang/core/json",
+  "moonbitlang/x/fs" @x/fs,
 } for "test"
+
+import {
+  "moonbitlang/x/fs" @x/fs,
+} for "wbtest"

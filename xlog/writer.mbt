@@ -41,57 +41,59 @@ pub impl Writer for Multi with fn write(self : Multi, entry : Entry) -> Unit {
 struct File {
   format : Format
   path : String
+  mut file : @fs.File?
 }
 
 ///|
 pub fn File::File(
   path : String,
   format? : Format = Jsonl,
-) -> File raise @x/fs.IOError {
-  if @x/fs.path_exists(path) {
-    guard @x/fs.is_file(path) else {
-      raise @x/fs.IOError("\{path} is not a file")
-    }
-  } else {
-    @x/fs.write_string_to_file(path, "")
-  }
-  File::{ format, path }
+) -> File raise @fs.IOError {
+  let file = @fs.File::open_append(path)
+  File::{ format, path, file: Some(file) }
 }
 
 ///|
 let self_log : Array[Entry] = []
 
 ///|
-pub impl Writer for File with fn write(self : File, entry : Entry) -> Unit {
-  let s = @x/fs.read_file_to_string(self.path) catch {
-    error => {
-      self_log.push(
-        Entry(
-          level=Error,
-          category="self_log",
-          "failed to read from log file \{self.path}: \{@debug.to_string(error)}",
-          fields={ "path": self.path, "error": @debug.to_string(error) },
-        ),
-      )
-      return
-    }
+fn File::write_entry(self : File, entry : Entry) -> Unit raise @fs.IOError {
+  guard self.file is Some(file) else {
+    raise @fs.IOError("@xlog.File::write(): file is closed")
   }
   let sb = StringBuilder::new()
-  sb.write_string(s)
   match self.format {
     Text => sb.write_string(entry.to_string())
     Jsonl => sb.write_string(entry.to_json().stringify())
   }
   sb.write_char('\n')
-  @x/fs.write_string_to_file(self.path, sb.to_string()) catch {
-    error =>
-      self_log.push(
-        Entry(
-          level=Error,
-          category="self_log",
-          "failed to write to log file \{self.path}: \{@debug.to_string(error)}",
-          fields={ "path": self.path, "error": @debug.to_string(error) },
-        ),
-      )
+  @fs.File::write_string(file, sb.to_string())
+  @fs.File::flush(file)
+}
+
+///|
+pub fn File::close(self : File) -> Unit {
+  if self.file is Some(file) {
+    self.file = None
+    @fs.File::close(file)
+  }
+}
+
+///|
+fn log_write_error(path : String, message : String) -> Unit {
+  self_log.push(
+    Entry(
+      level=Error,
+      category="self_log",
+      "failed to write to log file \{path}: \{message}",
+      fields={ "path": path, "error": message },
+    ),
+  )
+}
+
+///|
+pub impl Writer for File with fn write(self : File, entry : Entry) -> Unit {
+  self.write_entry(entry) catch {
+    error => log_write_error(self.path, error.to_string())
   }
 }

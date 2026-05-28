@@ -1,0 +1,13 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/core/encoding/utf8",
+}
+
+import {
+  "moonbitlang/x/fs" @x/fs,
+} for "test"
+
+options(
+  "native-stub": [ "native.c" ],
+)

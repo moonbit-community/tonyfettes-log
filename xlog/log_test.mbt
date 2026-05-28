@@ -25,7 +25,9 @@ fn reset_file(path : String) -> Unit {
 test "file logger factory" {
   let path = "_build/test.file.logger"
   reset_file(path)
-  let logger = @xlog.Logger(@xlog.File(path), category="app")
+  let file = @xlog.File(path)
+  defer file.close()
+  let logger = @xlog.Logger(file, category="app")
   logger.warn("file warning")
   guard read_entries(path) is [line] else { fail("expect exactly one line") }
   guard line is Object(object) else { fail("expect an object") }
@@ -50,10 +52,39 @@ test "file logger factory" {
 }
 
 ///|
+test "file logger opens in append mode" {
+  let path = "_build/test.file.append"
+  reset_file(path)
+  {
+    let first = @xlog.File(path)
+    defer first.close()
+    @xlog.Logger(first, category="app").info("first")
+  }
+  {
+    let second = @xlog.File(path)
+    defer second.close()
+    @xlog.Logger(second, category="app").info("second")
+  }
+  guard read_entries(path) is [first_entry, second_entry] else {
+    fail("expect exactly two lines")
+  }
+  guard first_entry is Object(first_object) else { fail("expect an object") }
+  guard first_object.get("message") is Some("first") else {
+    fail("expect first message")
+  }
+  guard second_entry is Object(second_object) else { fail("expect an object") }
+  guard second_object.get("message") is Some("second") else {
+    fail("expect second message")
+  }
+}
+
+///|
 test "nested category" {
   let path = "_build/test.category"
   reset_file(path)
-  let logger = @xlog.Logger(@xlog.File(path), category="app")
+  let file = @xlog.File(path)
+  defer file.close()
+  let logger = @xlog.Logger(file, category="app")
   let db = logger.child(category="db")
   db.info("Query executed")
   guard read_entries(path) is [line] else { fail("expect exactly one line") }
@@ -70,7 +101,9 @@ test "nested category" {
 test "child logger level is independent after creation" {
   let path = "_build/test.level"
   reset_file(path)
-  let logger = @xlog.Logger(@xlog.File(path), category="app", level=Warn)
+  let file = @xlog.File(path)
+  defer file.close()
+  let logger = @xlog.Logger(file, category="app", level=Warn)
   let db = logger.child(category="db")
   db.info("hidden")
   logger.set_level(Info)
@@ -102,7 +135,9 @@ test "config overrides category hierarchy" {
   let path = "_build/test.category.filter"
   reset_file(path)
   let config = @xlog.Config::new(level=Info)
-  let logger = @xlog.Logger(@xlog.File(path), category="app", config~)
+  let file = @xlog.File(path)
+  defer file.close()
+  let logger = @xlog.Logger(file, category="app", config~)
   let db = logger.child(category="db")
   let query = db.child(category="query")
   let db2 = logger.child(category="db2")
@@ -154,7 +189,9 @@ test "config reads default level and overrides from env" {
   @env.unset_env_var(env)
   let path = "_build/test.config.env"
   reset_file(path)
-  let logger = @xlog.Logger(@xlog.File(path), category="app", config~)
+  let file = @xlog.File(path)
+  defer file.close()
+  let logger = @xlog.Logger(file, category="app", config~)
   let db = logger.child(category="db")
   let query = db.child(category="query")
   logger.info("app info hidden")
@@ -185,7 +222,9 @@ test "config reads MOON_SLOG by default" {
   @env.unset_env_var("MOON_SLOG")
   let path = "_build/test.config.default.env"
   reset_file(path)
-  let logger = @xlog.Logger(@xlog.File(path), config~)
+  let file = @xlog.File(path)
+  defer file.close()
+  let logger = @xlog.Logger(file, config~)
   logger.debug("default env debug")
   logger.trace("default env trace hidden")
   guard read_entries(path) is [entry] else { fail("expect exactly one line") }
@@ -214,7 +253,12 @@ test "multi destination logger writes to all files" {
   for p in ps {
     reset_file(p)
   }
-  let logger = ps.map(p => @xlog.File(p)) |> @xlog.Multi() |> @xlog.Logger()
+  let files = ps.map(p => @xlog.File(p))
+  defer (for file in files {
+    file.close()
+  })
+  let writers : Array[&@xlog.Writer] = files.map(file => file)
+  let logger = writers |> @xlog.Multi() |> @xlog.Logger()
   logger.info("sync fanout")
   for p in ps {
     guard read_entries(p) is [line] else { fail("expect exactly one line") }
