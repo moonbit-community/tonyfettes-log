@@ -34,29 +34,29 @@ test "package-level functions use the default logger" {
 }
 
 ///|
-test "default logger reads MOON_SLOG" {
-  @env.set_env_var("MOON_SLOG", "debug")
+test "default logger reads MOON_XLOG" {
+  @env.set_env_var("MOON_XLOG", "debug")
   default_logger.val = None
   let logger = default()
-  @env.unset_env_var("MOON_SLOG")
+  @env.unset_env_var("MOON_XLOG")
   default_logger.val = None
   guard logger.is_level_enabled(Debug) else {
-    fail("expect MOON_SLOG to enable debug")
+    fail("expect MOON_XLOG to enable debug")
   }
   guard !logger.is_level_enabled(Trace) else {
-    fail("expect MOON_SLOG=debug to reject trace")
+    fail("expect MOON_XLOG=debug to reject trace")
   }
 }
 
 ///|
-test "default logger falls back on invalid MOON_SLOG" {
-  @env.set_env_var("MOON_SLOG", "app..db=debug")
+test "default logger falls back on invalid MOON_XLOG" {
+  @env.set_env_var("MOON_XLOG", "app..db=debug")
   default_logger.val = None
   let logger = default()
-  @env.unset_env_var("MOON_SLOG")
+  @env.unset_env_var("MOON_XLOG")
   default_logger.val = None
   guard logger.is_level_enabled(Info) else {
-    fail("expect invalid MOON_SLOG to fall back to info")
+    fail("expect invalid MOON_XLOG to fall back to info")
   }
   guard !logger.is_level_enabled(Debug) else {
     fail("expect fallback level to reject debug")

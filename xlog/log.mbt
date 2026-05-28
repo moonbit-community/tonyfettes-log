@@ -169,11 +169,11 @@ let default_logger : Ref[Logger?] = Ref(None)
 
 ///|
 fn default_config() -> Config {
-  Config::from_env(env="MOON_SLOG") catch {
+  Config::from_env(env="MOON_XLOG") catch {
     _ => {
       self_log.push(
-        Entry(level=Error, category="self_log", "failed to parse MOON_SLOG", fields={
-          "env": "MOON_SLOG",
+        Entry(level=Error, category="self_log", "failed to parse MOON_XLOG", fields={
+          "env": "MOON_XLOG",
         }),
       )
       Config::new()

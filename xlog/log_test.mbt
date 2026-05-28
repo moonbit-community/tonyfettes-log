@@ -216,10 +216,10 @@ test "config reads default level and overrides from env" {
 }
 
 ///|
-test "config reads MOON_SLOG by default" {
-  @env.set_env_var("MOON_SLOG", "debug")
+test "config reads MOON_XLOG by default" {
+  @env.set_env_var("MOON_XLOG", "debug")
   let config = @xlog.Config::from_env()
-  @env.unset_env_var("MOON_SLOG")
+  @env.unset_env_var("MOON_XLOG")
   let path = "_build/test.config.default.env"
   reset_file(path)
   let file = @xlog.File(path)

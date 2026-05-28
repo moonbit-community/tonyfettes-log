@@ -18,7 +18,7 @@ pub(all) suberror ConfigError {
 
 ///|
 pub fn Config::from_env(
-  env? : String = "MOON_SLOG",
+  env? : String = "MOON_XLOG",
   level? : Level = Info,
 ) -> Config raise ConfigError {
   let config = Config::new(level~)
