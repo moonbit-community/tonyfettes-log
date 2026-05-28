@@ -40,10 +40,7 @@ pub fn[H : Handler] Logger::Logger(
   category? : String,
   config? : Config,
 ) -> Logger {
-  let level = match config {
-    Some(config) => config.level
-    None => level
-  }
+  let level = if config is Some(config) { config.level } else { level }
   Logger::{ handler, level, category, config }
 }
 
@@ -220,7 +217,7 @@ pub fn fatal(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  global().log(Fatal, message, fields?, category?, loc~)
+  global_logger.log(Fatal, message, fields?, category?, loc~)
 }
 
 ///|
@@ -231,7 +228,7 @@ pub fn error(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  global().log(Error, message, fields?, category?, loc~)
+  global_logger.log(Error, message, fields?, category?, loc~)
 }
 
 ///|
@@ -242,7 +239,7 @@ pub fn warn(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  global().log(Warn, message, fields?, category?, loc~)
+  global_logger.log(Warn, message, fields?, category?, loc~)
 }
 
 ///|
@@ -253,7 +250,7 @@ pub fn info(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  global().log(Info, message, fields?, category?, loc~)
+  global_logger.log(Info, message, fields?, category?, loc~)
 }
 
 ///|
@@ -264,7 +261,7 @@ pub fn debug(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  global().log(Debug, message, fields?, category?, loc~)
+  global_logger.log(Debug, message, fields?, category?, loc~)
 }
 
 ///|
@@ -275,5 +272,5 @@ pub fn trace(
   category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  global().log(Trace, message, fields?, category?, loc~)
+  global_logger.log(Trace, message, fields?, category?, loc~)
 }
