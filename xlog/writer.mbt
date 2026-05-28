@@ -80,20 +80,18 @@ pub fn File::close(self : File) -> Unit {
 }
 
 ///|
-fn log_write_error(path : String, message : String) -> Unit {
-  self_log.push(
-    Entry(
-      level=Error,
-      category="self_log",
-      "failed to write to log file \{path}: \{message}",
-      fields={ "path": path, "error": message },
-    ),
-  )
-}
-
-///|
 pub impl Writer for File with fn write(self : File, entry : Entry) -> Unit {
   self.write_entry(entry) catch {
-    error => log_write_error(self.path, error.to_string())
+    error => {
+      let message = error.to_string()
+      self_log.push(
+        Entry(
+          level=Error,
+          category="self_log",
+          "failed to write to log file \{self.path}: \{message}",
+          fields={ "path": self.path, "error": message },
+        ),
+      )
+    }
   }
 }
