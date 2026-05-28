@@ -1,5 +1,4 @@
 ///|
-#external
 type File
 
 ///|
@@ -41,6 +40,9 @@ pub fn File::open_append(path : String) -> File raise IOError {
 
 ///|
 pub fn File::write(self : File, data : Bytes) -> Unit raise IOError {
+  guard !is_null(self) else {
+    raise IOError("@fs.File::write(): file is closed")
+  }
   guard write(self, data) == 0 else {
     raise IOError("@fs.File::write(): failed to write")
   }
@@ -53,6 +55,9 @@ pub fn File::write_string(self : File, data : String) -> Unit raise IOError {
 
 ///|
 pub fn File::flush(self : File) -> Unit raise IOError {
+  guard !is_null(self) else {
+    raise IOError("@fs.File::flush(): file is closed")
+  }
   guard flush(self) == 0 else {
     raise IOError("@fs.File::flush(): failed to flush")
   }

@@ -257,6 +257,30 @@ test "top-level helpers accept category" {
 }
 
 ///|
+test "global file handler remains alive after setup scope" {
+  let path = "_build/test.global.file.handler.lifetime"
+  reset_file(path)
+  let logger = @xlog.global()
+  defer {
+    logger.set_handler(@xlog.Stdout())
+    logger.set_config(@xlog.Config())
+  }
+  {
+    let file = @xlog.File(path)
+    logger.set_handler(file)
+  }
+  @xlog.info("after setup", category="lifetime")
+  guard read_entries(path) is [entry] else { fail("expect exactly one line") }
+  guard entry is Object(object) else { fail("expect an object") }
+  guard object.get("category") is Some("lifetime") else {
+    fail("expect category")
+  }
+  guard object.get("message") is Some("after setup") else {
+    fail("expect message")
+  }
+}
+
+///|
 test "config reads MOON_XLOG by default" {
   @env.set_env_var("MOON_XLOG", "debug")
   let config = @xlog.Config::from_env()

@@ -82,21 +82,19 @@ The package global logger catches invalid `MOON_XLOG` and falls back to `Info`.
 
 ```moonbit
 let file = @xlog.File("_build/app.log")
-defer file.close()
-
 @xlog.global().set_handler(file)
 @xlog.info("written to file", category="app")
 ```
 
-`File` is native-only, uses a small ISO C `FILE *` stub, requires explicit
-`close()`, and does not provide multi-process atomic logging guarantees.
+`File` is native-only and uses a small ISO C `FILE *` stub. The native handle
+closes automatically when the handler is no longer reachable; call `close()`
+only after removing it from long-lived loggers. It does not provide
+multi-process atomic logging guarantees.
 
 `Multi` fans out to several handlers:
 
 ```moonbit
 let file = @xlog.File("_build/app.log")
-defer file.close()
-
 let handlers : Array[&@xlog.Handler] = [@xlog.Stdout(), file]
 @xlog.global().set_handler(@xlog.Multi(handlers))
 ```

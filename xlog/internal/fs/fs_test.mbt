@@ -18,3 +18,19 @@ test "open_append preserves existing content" {
   file.flush()
   inspect(@x/fs.read_file_to_string(path), content="first\nsecond")
 }
+
+///|
+test "close is idempotent and write after close fails" {
+  let path = "_build/test.internal.fs.closed"
+  reset_file(path)
+  let file = File::open_append(path)
+  file.close()
+  file.close()
+  let result : Result[Unit, IOError] = try? file.write_string("closed")
+  guard result is Err(IOError(message)) else {
+    fail("expect write after close to fail")
+  }
+  guard message.contains("file is closed") else {
+    fail("expect closed file error")
+  }
+}

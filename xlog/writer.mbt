@@ -51,7 +51,7 @@ pub impl Handler for Multi with fn handle(self : Multi, entry : Entry) -> Unit {
 ///|
 struct File {
   format : Format
-  mut file : @fs.File?
+  file : @fs.File
 }
 
 ///|
@@ -60,30 +60,24 @@ pub fn File::File(
   format? : Format = Jsonl,
 ) -> File raise @fs.IOError {
   let file = @fs.File::open_append(path)
-  File::{ format, file: Some(file) }
+  File::{ format, file }
 }
 
 ///|
 fn File::write_entry(self : File, entry : Entry) -> Unit raise @fs.IOError {
-  guard self.file is Some(file) else {
-    raise @fs.IOError("@xlog.File::write(): file is closed")
-  }
   let sb = StringBuilder::new()
   match self.format {
     Text => sb.write_string(entry.to_string())
     Jsonl => sb.write_string(entry.to_json().stringify())
   }
   sb.write_char('\n')
-  @fs.File::write_string(file, sb.to_string())
-  @fs.File::flush(file)
+  @fs.File::write_string(self.file, sb.to_string())
+  @fs.File::flush(self.file)
 }
 
 ///|
 pub fn File::close(self : File) -> Unit {
-  if self.file is Some(file) {
-    self.file = None
-    @fs.File::close(file)
-  }
+  @fs.File::close(self.file)
 }
 
 ///|
