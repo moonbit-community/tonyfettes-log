@@ -9,29 +9,29 @@ import {
 
 // Values
 #callsite(autofill(loc))
-pub fn debug(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn debug(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 pub fn default() -> Logger
 
 #callsite(autofill(loc))
-pub fn error(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn error(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 #callsite(autofill(loc))
-pub fn fatal(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn fatal(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 #callsite(autofill(loc))
-pub fn info(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn info(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 #callsite(autofill(loc))
-pub fn log(Level, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn log(Level, String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 pub fn set_default(Logger) -> Unit
 
 #callsite(autofill(loc))
-pub fn trace(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn trace(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 #callsite(autofill(loc))
-pub fn warn(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn warn(String, fields? : Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
 
 // Errors
 pub(all) suberror ConfigError {

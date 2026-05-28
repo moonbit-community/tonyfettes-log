@@ -216,6 +216,45 @@ test "config reads default level and overrides from env" {
 }
 
 ///|
+test "top-level helpers accept category" {
+  let path = "_build/test.top.level.category"
+  reset_file(path)
+  let config = @xlog.Config::new(level=Warn)
+  config.set_category_level("db", Debug)
+  let file = @xlog.File(path)
+  defer {
+    @xlog.set_default(@xlog.Logger(@xlog.Stdout()))
+    file.close()
+  }
+  @xlog.set_default(@xlog.Logger(file, config~))
+  @xlog.debug("hidden without category")
+  @xlog.debug("db debug", category="db")
+  @xlog.info("db info", category="db")
+  @xlog.warn("root warn")
+  guard read_entries(path) is [db_debug, db_info, root_warn] else {
+    fail("expect exactly three lines")
+  }
+  guard db_debug is Object(db_debug_object) else { fail("expect an object") }
+  guard db_debug_object.get("category") is Some("db") else {
+    fail("expect \"category\" is \"db\"")
+  }
+  guard db_debug_object.get("message") is Some("db debug") else {
+    fail("expect db debug")
+  }
+  guard db_info is Object(db_info_object) else { fail("expect an object") }
+  guard db_info_object.get("category") is Some("db") else {
+    fail("expect \"category\" is \"db\"")
+  }
+  guard db_info_object.get("message") is Some("db info") else {
+    fail("expect db info")
+  }
+  guard root_warn is Object(root_warn_object) else { fail("expect an object") }
+  guard root_warn_object.get("message") is Some("root warn") else {
+    fail("expect root warn")
+  }
+}
+
+///|
 test "config reads MOON_XLOG by default" {
   @env.set_env_var("MOON_XLOG", "debug")
   let config = @xlog.Config::from_env()

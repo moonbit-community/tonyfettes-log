@@ -205,9 +205,14 @@ pub fn log(
   level : Level,
   message : String,
   fields? : Map[String, Json],
+  category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  default().log(level, message, fields?, loc~)
+  match category {
+    Some(category) =>
+      default().child(category~).log(level, message, fields?, loc~)
+    None => default().log(level, message, fields?, loc~)
+  }
 }
 
 ///|
@@ -215,9 +220,10 @@ pub fn log(
 pub fn fatal(
   message : String,
   fields? : Map[String, Json],
+  category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Fatal, message, fields?, loc~)
+  log(Fatal, message, fields?, category?, loc~)
 }
 
 ///|
@@ -225,9 +231,10 @@ pub fn fatal(
 pub fn error(
   message : String,
   fields? : Map[String, Json],
+  category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Error, message, fields?, loc~)
+  log(Error, message, fields?, category?, loc~)
 }
 
 ///|
@@ -235,9 +242,10 @@ pub fn error(
 pub fn warn(
   message : String,
   fields? : Map[String, Json],
+  category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Warn, message, fields?, loc~)
+  log(Warn, message, fields?, category?, loc~)
 }
 
 ///|
@@ -245,9 +253,10 @@ pub fn warn(
 pub fn info(
   message : String,
   fields? : Map[String, Json],
+  category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Info, message, fields?, loc~)
+  log(Info, message, fields?, category?, loc~)
 }
 
 ///|
@@ -255,9 +264,10 @@ pub fn info(
 pub fn debug(
   message : String,
   fields? : Map[String, Json],
+  category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Debug, message, fields?, loc~)
+  log(Debug, message, fields?, category?, loc~)
 }
 
 ///|
@@ -265,7 +275,8 @@ pub fn debug(
 pub fn trace(
   message : String,
   fields? : Map[String, Json],
+  category? : String,
   loc~ : SourceLoc,
 ) -> Unit {
-  log(Trace, message, fields?, loc~)
+  log(Trace, message, fields?, category?, loc~)
 }
