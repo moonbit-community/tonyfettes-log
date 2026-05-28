@@ -1,6 +1,6 @@
 ///|
 pub(open) trait Handler {
-  fn handle(Self, Entry) -> Unit
+  fn handle(Self, Entry) -> Unit raise
 }
 
 ///|
@@ -28,19 +28,29 @@ pub impl Handler for Stdout with fn handle(self : Stdout, entry : Entry) -> Unit
 }
 
 ///|
+pub(all) suberror MultiError {
+  MultiError(Array[Error])
+}
+
+///|
 pub(all) struct Multi(Array[&Handler])
 
 ///|
 pub impl Handler for Multi with fn handle(self : Multi, entry : Entry) -> Unit {
+  let errors = []
   for handler in self.0 {
-    handler.handle(entry)
+    handler.handle(entry) catch {
+      error => errors.push(error)
+    }
+  }
+  if !errors.is_empty() {
+    raise MultiError(errors)
   }
 }
 
 ///|
 struct File {
   format : Format
-  path : String
   mut file : @fs.File?
 }
 
@@ -50,7 +60,7 @@ pub fn File::File(
   format? : Format = Jsonl,
 ) -> File raise @fs.IOError {
   let file = @fs.File::open_append(path)
-  File::{ format, path, file: Some(file) }
+  File::{ format, file: Some(file) }
 }
 
 ///|
@@ -77,18 +87,6 @@ pub fn File::close(self : File) -> Unit {
 }
 
 ///|
-pub impl Handler for File with fn handle(self : File, entry : Entry) -> Unit {
-  self.write_entry(entry) catch {
-    error => {
-      let message = error.to_string()
-      self_log.push(
-        Entry(
-          level=Error,
-          category="self_log",
-          "failed to write to log file \{self.path}: \{message}",
-          fields={ "path": self.path, "error": message },
-        ),
-      )
-    }
-  }
+pub impl Handler for File with fn handle(self : File, entry : Entry) -> Unit raise {
+  self.write_entry(entry)
 }

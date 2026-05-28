@@ -78,7 +78,9 @@ fn Logger::log(
 ) -> Unit {
   if self.is_level_enabled(level, category?) {
     let category = combine_category(self.category, category)
-    self.handler.handle(Entry(level~, category?, source=loc, message, fields?))
+    self.handler.handle(Entry(level~, category?, source=loc, message, fields?)) catch {
+      _ => ()
+    }
   }
 }
 
@@ -194,19 +196,9 @@ pub fn Logger::trace(
 }
 
 ///|
-let self_log : Array[Entry] = []
-
-///|
 fn default_config() -> Config {
   Config::from_env(env="MOON_XLOG") catch {
-    _ => {
-      self_log.push(
-        Entry(level=Error, category="self_log", "failed to parse MOON_XLOG", fields={
-          "env": "MOON_XLOG",
-        }),
-      )
-      Config::new()
-    }
+    _ => Config::new()
   }
 }
 

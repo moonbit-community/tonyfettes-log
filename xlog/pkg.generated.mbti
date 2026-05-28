@@ -35,6 +35,10 @@ pub(all) suberror ConfigError {
   InvalidLevel(String)
 }
 
+pub(all) suberror MultiError {
+  MultiError(Array[Error])
+}
+
 // Types and methods
 type Config
 pub fn Config::from_env(env? : String, level? : Level) -> Self raise ConfigError
@@ -109,6 +113,6 @@ pub impl Handler for Stdout
 
 // Traits
 pub(open) trait Handler {
-  fn handle(Self, Entry) -> Unit
+  fn handle(Self, Entry) -> Unit raise
 }
 
