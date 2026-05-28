@@ -1,0 +1,14 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/core/env",
+  "moonbitlang/x/time" @x/time,
+  "moonbitlang/core/debug",
+  "tonyfettes/sync/io" @sync/io,
+  "tonyfettes/sync/stdio" @sync/stdio,
+}
+
+import {
+  "moonbitlang/core/json",
+  "tonyfettes/sync/fs" @sync/fs,
+} for "test"

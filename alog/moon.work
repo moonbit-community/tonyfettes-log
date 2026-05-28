@@ -1,0 +1,5 @@
+members = [
+  ".",
+  "../log",
+]
+preferred_target = "native"

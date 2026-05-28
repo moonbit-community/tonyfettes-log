@@ -1,0 +1,118 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/xlog"
+
+import {
+  "moonbitlang/core/builtin",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/time",
+}
+
+// Values
+#callsite(autofill(loc))
+pub fn debug(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+pub fn default() -> Logger
+
+#callsite(autofill(loc))
+pub fn error(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+#callsite(autofill(loc))
+pub fn fatal(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+#callsite(autofill(loc))
+pub fn info(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+#callsite(autofill(loc))
+pub fn log(Level, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+pub fn set_default(Logger) -> Unit
+
+#callsite(autofill(loc))
+pub fn trace(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+#callsite(autofill(loc))
+pub fn warn(String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+// Errors
+pub(all) suberror ConfigError {
+  InvalidCategory(String)
+  InvalidDirective(String)
+  InvalidLevel(String)
+}
+
+// Types and methods
+type Config
+pub fn Config::from_env(env? : String, level? : Level) -> Self raise ConfigError
+pub fn Config::new(level? : Level) -> Self
+pub fn Config::set_category_level(Self, String, Level) -> Unit raise ConfigError
+
+pub struct Entry {
+  level : Level
+  category : String?
+  timestamp : @time.ZonedDateTime
+  source : SourceLoc?
+  message : String
+  fields : Map[String, Json]
+}
+pub impl Show for Entry
+pub impl ToJson for Entry
+
+pub struct File {
+  // private fields
+}
+pub fn File::File(String, format? : Format) -> Self raise @fs.IOError
+pub impl Writer for File
+
+pub(all) enum Format {
+  Text
+  Jsonl
+}
+
+pub(all) enum Level {
+  Fatal
+  Error
+  Warn
+  Info
+  Debug
+  Trace
+} derive(Compare, Eq)
+pub impl Show for Level
+
+pub struct Logger {
+  // private fields
+}
+pub fn[W : Writer] Logger::Logger(W, level? : Level, category? : String, config? : Config) -> Self
+pub fn Logger::category(Self) -> String?
+pub fn Logger::child(Self, category? : String, level? : Level) -> Self
+#callsite(autofill(loc))
+pub fn Logger::debug(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn Logger::error(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn Logger::fatal(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn Logger::info(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn Logger::log(Self, Level, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+pub fn Logger::set_level(Self, Level) -> Unit
+#callsite(autofill(loc))
+pub fn Logger::trace(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn Logger::warn(Self, String, fields? : Map[String, Json], loc~ : SourceLoc) -> Unit
+
+pub(all) struct Multi(Array[&Writer])
+pub impl Writer for Multi
+
+pub struct Stdout {
+  // private fields
+}
+pub fn Stdout::Stdout(format? : Format) -> Self
+pub impl Writer for Stdout
+
+// Type aliases
+
+// Traits
+pub(open) trait Writer {
+  fn write(Self, Entry) -> Unit
+}
+
