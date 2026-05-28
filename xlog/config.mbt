@@ -63,20 +63,14 @@ fn Config::parse(self : Config, spec : String) -> Unit raise ConfigError {
 
 ///|
 fn parse_level(level : StringView) -> Level raise ConfigError {
-  if level.equal_ignore_ascii_case("fatal") {
-    Fatal
-  } else if level.equal_ignore_ascii_case("error") {
-    Error
-  } else if level.equal_ignore_ascii_case("warn") {
-    Warn
-  } else if level.equal_ignore_ascii_case("info") {
-    Info
-  } else if level.equal_ignore_ascii_case("debug") {
-    Debug
-  } else if level.equal_ignore_ascii_case("trace") {
-    Trace
-  } else {
-    raise ConfigError::InvalidLevel(level.to_owned())
+  match level {
+    ['F' | 'f', 'A' | 'a', 'T' | 't', 'A' | 'a', 'L' | 'l'] => Fatal
+    ['E' | 'e', 'R' | 'r', 'R' | 'r', 'O' | 'o', 'R' | 'r'] => Error
+    ['W' | 'w', 'A' | 'a', 'R' | 'r', 'N' | 'n'] => Warn
+    ['I' | 'i', 'N' | 'n', 'F' | 'f', 'O' | 'o'] => Info
+    ['D' | 'd', 'E' | 'e', 'B' | 'b', 'U' | 'u', 'G' | 'g'] => Debug
+    ['T' | 't', 'R' | 'r', 'A' | 'a', 'C' | 'c', 'E' | 'e'] => Trace
+    _ => raise ConfigError::InvalidLevel(level.to_owned())
   }
 }
 
