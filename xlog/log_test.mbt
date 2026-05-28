@@ -134,7 +134,7 @@ test "child logger level is independent after creation" {
 test "config overrides category hierarchy" {
   let path = "_build/test.category.filter"
   reset_file(path)
-  let config = @xlog.Config::new(level=Info)
+  let config = @xlog.Config(level=Info)
   let file = @xlog.File(path)
   defer file.close()
   let logger = @xlog.Logger(file, category="app", config~)
@@ -168,7 +168,7 @@ test "config overrides category hierarchy" {
 
 ///|
 test "config rejects invalid categories" {
-  let config = @xlog.Config::new()
+  let config = @xlog.Config()
   for category in ["", ".app", "app.", "app..db"] {
     let result : Result[Unit, @xlog.ConfigError] = try? config.set_category_level(
       category,
@@ -219,12 +219,12 @@ test "config reads default level and overrides from env" {
 test "top-level helpers accept category" {
   let path = "_build/test.top.level.category"
   reset_file(path)
-  let config = @xlog.Config::new(level=Warn)
+  let config = @xlog.Config(level=Warn)
   config.set_category_level("db", Debug)
   let file = @xlog.File(path)
   defer {
     @xlog.global().set_handler(@xlog.Stdout())
-    @xlog.global().set_config(@xlog.Config::new())
+    @xlog.global().set_config(@xlog.Config())
     file.close()
   }
   @xlog.global().set_handler(file)

@@ -40,9 +40,11 @@ pub(all) suberror MultiError {
 }
 
 // Types and methods
-type Config
+pub struct Config {
+  // private fields
+}
+pub fn Config::Config(level? : Level) -> Self
 pub fn Config::from_env(env? : String, level? : Level) -> Self raise ConfigError
-pub fn Config::new(level? : Level) -> Self
 pub fn Config::set_category_level(Self, String, Level) -> Unit raise ConfigError
 
 pub struct Entry {

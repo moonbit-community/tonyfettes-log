@@ -1,6 +1,6 @@
 ///|
 fn main {
-  let config = @xlog.Config::from_env() catch { _ => @xlog.Config::new() }
+  let config = @xlog.Config::from_env() catch { _ => @xlog.Config() }
   let logger = @xlog.Logger(@xlog.Stdout(), category="lorem", config~)
   let db = logger.child(category="db")
   let parser = logger.child(category="parser")

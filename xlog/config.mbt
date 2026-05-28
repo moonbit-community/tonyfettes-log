@@ -5,7 +5,7 @@ struct Config {
 }
 
 ///|
-pub fn Config::new(level? : Level = Info) -> Config {
+pub fn Config::Config(level? : Level = Info) -> Config {
   Config::{ level, levels: {} }
 }
 
@@ -21,7 +21,7 @@ pub fn Config::from_env(
   env? : String = "MOON_XLOG",
   level? : Level = Info,
 ) -> Config raise ConfigError {
-  let config = Config::new(level~)
+  let config = Config(level~)
   guard @env.get_env_var(env) is Some(spec) else { config }
   config.parse(spec)
   config

@@ -60,7 +60,7 @@ MOON_XLOG='warn,app.db=debug,app.db.query=trace'
 You can also build config directly:
 
 ```moonbit
-let config = @xlog.Config::new(level=@xlog.Warn)
+let config = @xlog.Config(level=@xlog.Warn)
 config.set_category_level("app.db", @xlog.Debug)
 
 let logger = @xlog.Logger(@xlog.Stdout(), category="app", config~)
@@ -109,7 +109,7 @@ raise `MultiError(Array[Error])`; ordinary logger calls swallow that error.
 Top-level helpers use `@xlog.global()`, a process-wide root logger:
 
 ```moonbit
-let config = @xlog.Config::from_env() catch { _ => @xlog.Config::new() }
+let config = @xlog.Config::from_env() catch { _ => @xlog.Config() }
 
 @xlog.global().set_config(config)
 @xlog.global().set_level(@xlog.Debug)

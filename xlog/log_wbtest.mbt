@@ -41,7 +41,7 @@ test "package-level functions use the default logger" {
   let logger = global()
   defer {
     logger.set_handler(Stdout())
-    logger.set_config(Config::new())
+    logger.set_config(Config())
   }
   logger.set_handler(MemoryHandler::{ entries, })
   logger.set_level(Debug)

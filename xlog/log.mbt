@@ -197,7 +197,7 @@ pub fn Logger::trace(
 ///|
 fn default_config() -> Config {
   Config::from_env(env="MOON_XLOG") catch {
-    _ => Config::new()
+    _ => Config()
   }
 }
 
