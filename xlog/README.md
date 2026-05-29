@@ -95,11 +95,12 @@ The package global logger catches invalid `MOON_XLOG` and falls back to `Info`.
 
 ## Outputs
 
-`Stdout` defaults to text output. Use `Jsonl` for one JSON object per line:
+`Stdout` defaults to one JSON object per line. Use `Text` for human-readable
+key-value output:
 
 ```moonbit
 @xlog.global().set_handler(@xlog.Stdout())
-@xlog.global().set_handler(@xlog.Stdout(format=@xlog.Jsonl))
+@xlog.global().set_handler(@xlog.Stdout(format=@xlog.Text))
 ```
 
 `File` opens an append-mode file and defaults to `Jsonl`:

@@ -108,7 +108,7 @@ pub fn Logger::event(
   loc~ : SourceLoc,
 ) -> Event? {
   if self.is_level_enabled(level, category?) {
-    Some(Event::{ logger: self, level, category, source: Some(loc), fields: {} })
+    Some(Event::{ logger: self, entry: Entry(level~, category?, source=loc) })
   } else {
     None
   }

@@ -26,8 +26,8 @@ struct Stdout {
 ///|
 /// Create a standard-output handler.
 ///
-/// The default format is `Text`.
-pub fn Stdout::Stdout(format? : Format = Text) -> Stdout {
+/// The default format is `Jsonl`.
+pub fn Stdout::Stdout(format? : Format = Jsonl) -> Stdout {
   Stdout::{ format, }
 }
 

@@ -6,16 +6,13 @@
 /// `write_object_end` to emit the entry.
 struct Event {
   logger : Logger
-  level : Level
-  category : String?
-  source : SourceLoc?
-  fields : Map[String, Json]
+  entry : Entry
 }
 
 ///|
 /// Begin writing the structured object for this event.
 pub fn Event::write_object_begin(self : Event) -> Unit {
-  self.fields.clear()
+  self.entry.fields.clear()
 }
 
 ///|
@@ -25,20 +22,13 @@ pub fn[T : ToJson] Event::write_object_field(
   key : String,
   value : T,
 ) -> Unit {
-  self.fields[key] = value.to_json()
+  self.entry.fields[key] = value.to_json()
 }
 
 ///|
 /// Finish and emit the event.
 pub fn Event::write_object_end(self : Event) -> Unit {
-  self.logger.handler.handle(
-    Entry(
-      level=self.level,
-      category?=self.category,
-      source?=self.source,
-      fields=self.fields,
-    ),
-  ) catch {
+  self.logger.handler.handle(self.entry) catch {
     _ => ()
   }
 }
