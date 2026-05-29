@@ -15,11 +15,11 @@ pub struct Entry {
 
 ///|
 fn Entry::Entry(
-  level : Level,
-  fields : Map[String, Json],
+  level~ : Level,
   category? : String,
   source? : SourceLoc,
   timestamp? : Int64 = @env.now().reinterpret_as_int64(),
+  fields? : Map[String, Json] = {},
 ) -> Entry {
   let timestamp = try! @x/time.unix(
     timestamp / 1_000,

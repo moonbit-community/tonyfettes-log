@@ -9,27 +9,27 @@ import {
 
 // Values
 #callsite(autofill(loc))
-pub fn debug(Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn debug(category? : String, loc~ : SourceLoc) -> Event?
 
 #callsite(autofill(loc))
-pub fn error(Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn error(category? : String, loc~ : SourceLoc) -> Event?
 
 #callsite(autofill(loc))
-pub fn event(Level, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn event(Level, category? : String, loc~ : SourceLoc) -> Event?
 
 #callsite(autofill(loc))
-pub fn fatal(Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn fatal(category? : String, loc~ : SourceLoc) -> Event?
 
 pub fn global() -> Logger
 
 #callsite(autofill(loc))
-pub fn info(Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn info(category? : String, loc~ : SourceLoc) -> Event?
 
 #callsite(autofill(loc))
-pub fn trace(Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn trace(category? : String, loc~ : SourceLoc) -> Event?
 
 #callsite(autofill(loc))
-pub fn warn(Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn warn(category? : String, loc~ : SourceLoc) -> Event?
 
 // Errors
 pub(all) suberror ConfigError {
@@ -60,6 +60,11 @@ pub struct Entry {
 pub impl Show for Entry
 pub impl ToJson for Entry
 
+type Event
+pub fn Event::write_object_begin(Self) -> Unit
+pub fn Event::write_object_end(Self) -> Unit
+pub fn[T : ToJson] Event::write_object_field(Self, String, T) -> Unit
+
 pub struct File {
   // private fields
 }
@@ -87,22 +92,22 @@ pub struct Logger {
 }
 pub fn[H : Handler] Logger::Logger(H, level? : Level, config? : Config) -> Self
 #callsite(autofill(loc))
-pub fn Logger::debug(Self, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn Logger::debug(Self, category? : String, loc~ : SourceLoc) -> Event?
 #callsite(autofill(loc))
-pub fn Logger::error(Self, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn Logger::error(Self, category? : String, loc~ : SourceLoc) -> Event?
 #callsite(autofill(loc))
-pub fn Logger::event(Self, Level, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn Logger::event(Self, Level, category? : String, loc~ : SourceLoc) -> Event?
 #callsite(autofill(loc))
-pub fn Logger::fatal(Self, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn Logger::fatal(Self, category? : String, loc~ : SourceLoc) -> Event?
 #callsite(autofill(loc))
-pub fn Logger::info(Self, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn Logger::info(Self, category? : String, loc~ : SourceLoc) -> Event?
 pub fn Logger::set_config(Self, Config) -> Unit
 pub fn[H : Handler] Logger::set_handler(Self, H) -> Unit
 pub fn Logger::set_level(Self, Level) -> Unit
 #callsite(autofill(loc))
-pub fn Logger::trace(Self, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn Logger::trace(Self, category? : String, loc~ : SourceLoc) -> Event?
 #callsite(autofill(loc))
-pub fn Logger::warn(Self, Map[String, Json], category? : String, loc~ : SourceLoc) -> Unit
+pub fn Logger::warn(Self, category? : String, loc~ : SourceLoc) -> Event?
 
 pub(all) struct Multi(Array[&Handler])
 pub impl Handler for Multi
