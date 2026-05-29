@@ -55,7 +55,6 @@ pub struct Entry {
   category : String?
   timestamp : @time.ZonedDateTime
   source : SourceLoc?
-  message : String
   fields : Map[String, Json]
 }
 pub impl Show for Entry

@@ -9,8 +9,6 @@ pub struct Entry {
   timestamp : @x/time.ZonedDateTime
   /// The source location captured from the logging callsite, if available.
   source : SourceLoc?
-  /// The human-readable log message.
-  message : String
   /// Structured fields attached to the record.
   fields : Map[String, Json]
 }
@@ -21,14 +19,13 @@ fn Entry::Entry(
   category? : String,
   source? : SourceLoc,
   timestamp? : Int64 = @env.now().reinterpret_as_int64(),
-  message : String,
   fields? : Map[String, Json] = {},
 ) -> Entry {
   let timestamp = try! @x/time.unix(
     timestamp / 1_000,
     nanosecond=(timestamp % 1_000).to_int() * 1_000_000,
   )
-  Entry::{ level, category, timestamp, source, message, fields }
+  Entry::{ level, category, timestamp, source, fields }
 }
 
 ///|
@@ -36,7 +33,6 @@ pub impl ToJson for Entry with fn to_json(self : Entry) -> Json {
   let object : Map[String, Json] = {
     "timestamp": self.timestamp.to_string(),
     "level": self.level.to_string(),
-    "message": self.message,
     "fields": self.fields.to_json(),
   }
   if self.category is Some(category) {
@@ -50,7 +46,6 @@ pub impl ToJson for Entry with fn to_json(self : Entry) -> Json {
 
 ///|
 pub impl Show for Entry with fn output(self, logger) -> Unit {
-  let msg = self.message.escape()
   logger <+ "timestamp=\{self.timestamp} level=\{self.level}"
   if self.category is Some(category) {
     logger <+ " category=\{category}"
@@ -58,7 +53,6 @@ pub impl Show for Entry with fn output(self, logger) -> Unit {
   if self.source is Some(source) {
     logger <+ " source=\{source}"
   }
-  logger <+ " msg=\{msg}"
   for key, value in self.fields {
     logger <+ " \{key}=\{value.stringify()}"
   }

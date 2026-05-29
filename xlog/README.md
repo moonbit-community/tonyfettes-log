@@ -63,6 +63,10 @@ if logger.info(category="app") is Some(event) {
 Create separate logger instances when components need independent levels while
 sharing the same output handler.
 
+All fields written through an event are user fields. A field named `"message"`
+is stored under `fields` like any other field; it is not promoted to top-level
+metadata.
+
 ## Configuration
 
 `Config::from_env()` reads `MOON_XLOG` by default:

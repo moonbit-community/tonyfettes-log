@@ -122,7 +122,6 @@ pub fn Logger::event(
       level,
       category,
       source: Some(loc),
-      message: "",
       fields: {},
       finished: false,
     })

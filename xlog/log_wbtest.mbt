@@ -17,6 +17,15 @@ priv suberror HandlerTestError {
 }
 
 ///|
+fn entry_message(entry : Entry) -> String {
+  match entry.fields.get("message") {
+    Some(String(message)) => message
+    Some(message) => message.stringify()
+    None => ""
+  }
+}
+
+///|
 struct FailingHandler {
   messages : Array[String]
 }
@@ -26,13 +35,14 @@ impl Handler for FailingHandler with fn handle(
   self : FailingHandler,
   entry : Entry,
 ) -> Unit raise {
-  self.messages.push(entry.message)
-  raise HandlerTestError(entry.message)
+  let message = entry_message(entry)
+  self.messages.push(message)
+  raise HandlerTestError(message)
 }
 
 ///|
 fn test_entry(message : String) -> Entry {
-  Entry(level=Info, message)
+  Entry(level=Info, fields={ "message": message })
 }
 
 ///|
@@ -59,14 +69,15 @@ test "package-level functions use the default logger" {
   guard entries is [info_entry, debug_entry] else {
     fail("expect exactly two entries")
   }
-  guard info_entry.level == Info && info_entry.message == "global info" else {
+  guard info_entry.level == Info && entry_message(info_entry) == "global info" else {
     fail("expect info entry")
   }
   guard info_entry.source is Some(info_source) &&
     info_source.to_string().contains("log_wbtest.mbt") else {
     fail("expect package-level source to point at test callsite")
   }
-  guard debug_entry.level == Debug && debug_entry.message == "global debug" else {
+  guard debug_entry.level == Debug &&
+    entry_message(debug_entry) == "global debug" else {
     fail("expect debug entry")
   }
 }
@@ -150,7 +161,7 @@ test "multi attempts every handler and returns collected errors" {
   guard first_messages == ["fanout"] && second_messages == ["fanout"] else {
     fail("expect failing handlers to be attempted")
   }
-  guard ok_entries is [entry] && entry.message == "fanout" else {
+  guard ok_entries is [entry] && entry_message(entry) == "fanout" else {
     fail("expect successful handler to be attempted")
   }
 }
