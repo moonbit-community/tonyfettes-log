@@ -12,19 +12,28 @@ handlers can still report errors when called directly or wrapped.
 Use top-level helpers when passing a logger around would be noisy:
 
 ```moonbit
-@xlog.info("server started", category="app", fields={ "port": 8080 })
-@xlog.debug("query plan", category="app.db")
+if @xlog.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "server started")
+  event.write_object_field("port", 8080)
+  event.write_object_end()
+}
 ```
 
-Use a `Logger` when you want explicit category context or a specific output:
+Use a `Logger` when you want a specific output:
 
 ```moonbit
-let logger = @xlog.Logger(@xlog.Stdout(), category="app")
-let db = logger.child(category="db")
+let logger = @xlog.Logger(@xlog.Stdout())
 
-logger.info("server started")
-db.debug("query plan")
+if logger.debug(category="app.db") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "query plan")
+  event.write_object_end()
+}
 ```
+
+This API is shaped for a future conditional streaming form where a disabled
+event skips evaluating structured fields.
 
 ## Levels And Categories
 
@@ -38,15 +47,21 @@ A record is emitted when its level is less than or equal to the effective level.
 Category overrides are hierarchical, so `app.db.query` falls back to `app.db`,
 then `app`, then the logger's level.
 
-Child loggers append category segments:
+Logger methods and top-level helpers return `None` when their level/category is
+disabled, or `Some(event)` when fields should be written:
 
 ```moonbit
-let app = @xlog.Logger(@xlog.Stdout(), category="app")
-let db = app.child(category="db") // app.db
+let logger = @xlog.Logger(@xlog.Stdout())
+
+if logger.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "server started")
+  event.write_object_end()
+}
 ```
 
-Logger methods do not take per-call categories. Use `child(category=...)` for
-logger instances, and `category="..."` for top-level helpers.
+Create separate logger instances when components need independent levels while
+sharing the same output handler.
 
 ## Configuration
 
@@ -63,7 +78,12 @@ You can also build config directly:
 let config = @xlog.Config(level=@xlog.Warn)
 config.set_category_level("app.db", @xlog.Debug)
 
-let logger = @xlog.Logger(@xlog.Stdout(), category="app", config~)
+let logger = @xlog.Logger(@xlog.Stdout(), config~)
+if logger.debug(category="app.db") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "query plan")
+  event.write_object_end()
+}
 ```
 
 Invalid levels, invalid directives, and invalid categories raise `ConfigError`.
@@ -83,7 +103,11 @@ The package global logger catches invalid `MOON_XLOG` and falls back to `Info`.
 ```moonbit
 let file = @xlog.File("_build/app.log")
 @xlog.global().set_handler(file)
-@xlog.info("written to file", category="app")
+if @xlog.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "written to file")
+  event.write_object_end()
+}
 ```
 
 `File` is native-only and uses a small ISO C `FILE *` stub. The native handle
@@ -111,7 +135,11 @@ let config = @xlog.Config::from_env() catch { _ => @xlog.Config() }
 
 @xlog.global().set_config(config)
 @xlog.global().set_level(@xlog.Debug)
-@xlog.info("top-level record", category="app")
+if @xlog.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "top-level record")
+  event.write_object_end()
+}
 ```
 
 `global()` is a root logger, not a replaceable default logger. Configure it with

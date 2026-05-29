@@ -1,48 +1,93 @@
 ///|
+fn emit(event : @xlog.Event?, write : (@xlog.Event) -> Unit) -> Unit {
+  if event is Some(event) {
+    event.write_object_begin()
+    write(event)
+    event.write_object_end()
+  }
+}
+
+///|
 fn main {
   let config = @xlog.Config::from_env() catch { _ => @xlog.Config() }
-  let logger = @xlog.Logger(@xlog.Stdout(), category="lorem", config~)
-  let db = logger.child(category="db")
-  let parser = logger.child(category="parser")
-  let lexer = parser.child(category="lexer")
-  let worker = logger.child(category="worker")
-  let cache = logger.child(category="cache")
-  let net = logger.child(category="net")
-  let exporter = logger.child(category="export")
-  let markdown = exporter.child(category="markdown")
-  let ui = logger.child(category="ui")
-  logger.error("failed to parse paragraph", fields={
-    "line": 42,
-    "token": "dolor",
+  let logger = @xlog.Logger(@xlog.Stdout(), config~)
+  emit(logger.error(category="lorem"), event => {
+    event.write_object_field("message", "failed to parse paragraph")
+    event.write_object_field("line", 42)
+    event.write_object_field("token", "dolor")
   })
-  logger.warn("using fallback corpus", fields={ "source": "embedded" })
-  logger.info("generated lorem paragraph", fields={
-    "words": 128,
-    "seed": "ipsum",
+  emit(logger.warn(category="lorem"), event => {
+    event.write_object_field("message", "using fallback corpus")
+    event.write_object_field("source", "embedded")
   })
-  parser.debug("normalized input text", fields={
-    "chars": 738,
-    "language": "latin",
+  emit(logger.info(category="lorem"), event => {
+    event.write_object_field("message", "generated lorem paragraph")
+    event.write_object_field("words", 128)
+    event.write_object_field("seed", "ipsum")
   })
-  lexer.trace("accepted token", fields={ "kind": "word", "value": "ipsum" })
-  db.debug("selected phrase batch", fields={ "batch": 7, "rows": 3 })
-  db.trace("phrase candidate", fields={
-    "candidate": "consectetur adipiscing elit",
+  emit(logger.debug(category="lorem.parser"), event => {
+    event.write_object_field("message", "normalized input text")
+    event.write_object_field("chars", 738)
+    event.write_object_field("language", "latin")
   })
-  cache.info("cache warmed", fields={ "entries": 12 })
-  cache.debug("cache hit", fields={ "key": "paragraph:seed:ipsum" })
-  net.warn("remote corpus unavailable", fields={ "host": "example.invalid" })
-  net.debug("retry scheduled", fields={ "delay_ms": 250 })
-  worker.debug("scheduled renderer job", fields={
-    "queue": "lorem",
-    "attempt": 1,
+  emit(logger.trace(category="lorem.parser.lexer"), event => {
+    event.write_object_field("message", "accepted token")
+    event.write_object_field("kind", "word")
+    event.write_object_field("value", "ipsum")
   })
-  worker.trace("renderer job payload", fields={
-    "payload": "sed do eiusmod tempor",
+  emit(logger.debug(category="lorem.db"), event => {
+    event.write_object_field("message", "selected phrase batch")
+    event.write_object_field("batch", 7)
+    event.write_object_field("rows", 3)
   })
-  exporter.info("export completed", fields={ "format": "txt" })
-  markdown.debug("rendered heading", fields={ "level": 2 })
-  markdown.trace("rendered span", fields={ "style": "emphasis" })
-  ui.info("preview refreshed", fields={ "pane": "output" })
-  ui.debug("cursor moved", fields={ "row": 3, "col": 18 })
+  emit(logger.trace(category="lorem.db"), event => {
+    event.write_object_field("message", "phrase candidate")
+    event.write_object_field("candidate", "consectetur adipiscing elit")
+  })
+  emit(logger.info(category="lorem.cache"), event => {
+    event.write_object_field("message", "cache warmed")
+    event.write_object_field("entries", 12)
+  })
+  emit(logger.debug(category="lorem.cache"), event => {
+    event.write_object_field("message", "cache hit")
+    event.write_object_field("key", "paragraph:seed:ipsum")
+  })
+  emit(logger.warn(category="lorem.net"), event => {
+    event.write_object_field("message", "remote corpus unavailable")
+    event.write_object_field("host", "example.invalid")
+  })
+  emit(logger.debug(category="lorem.net"), event => {
+    event.write_object_field("message", "retry scheduled")
+    event.write_object_field("delay_ms", 250)
+  })
+  emit(logger.debug(category="lorem.worker"), event => {
+    event.write_object_field("message", "scheduled renderer job")
+    event.write_object_field("queue", "lorem")
+    event.write_object_field("attempt", 1)
+  })
+  emit(logger.trace(category="lorem.worker"), event => {
+    event.write_object_field("message", "renderer job payload")
+    event.write_object_field("payload", "sed do eiusmod tempor")
+  })
+  emit(logger.info(category="lorem.export"), event => {
+    event.write_object_field("message", "export completed")
+    event.write_object_field("format", "txt")
+  })
+  emit(logger.debug(category="lorem.export.markdown"), event => {
+    event.write_object_field("message", "rendered heading")
+    event.write_object_field("level", 2)
+  })
+  emit(logger.trace(category="lorem.export.markdown"), event => {
+    event.write_object_field("message", "rendered span")
+    event.write_object_field("style", "emphasis")
+  })
+  emit(logger.info(category="lorem.ui"), event => {
+    event.write_object_field("message", "preview refreshed")
+    event.write_object_field("pane", "output")
+  })
+  emit(logger.debug(category="lorem.ui"), event => {
+    event.write_object_field("message", "cursor moved")
+    event.write_object_field("row", 3)
+    event.write_object_field("col", 18)
+  })
 }
