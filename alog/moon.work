@@ -1,4 +1,0 @@
-members = [
-  ".",
-]
-preferred_target = "native"
