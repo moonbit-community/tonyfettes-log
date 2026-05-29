@@ -66,15 +66,6 @@ fn Logger::is_level_enabled(
   level : Level,
   category? : String,
 ) -> Bool {
-  self.is_level_enabled_for_category(level, category)
-}
-
-///|
-fn Logger::is_level_enabled_for_category(
-  self : Logger,
-  level : Level,
-  category : String?,
-) -> Bool {
   let effective = if self.config is Some(config) &&
     category is Some(category) &&
     config.get_category_level(category) is Some(level) {
@@ -117,14 +108,7 @@ pub fn Logger::event(
   loc~ : SourceLoc,
 ) -> Event? {
   if self.is_level_enabled(level, category?) {
-    Some(Event::{
-      logger: self,
-      level,
-      category,
-      source: Some(loc),
-      fields: {},
-      finished: false,
-    })
+    Some(Event::{ logger: self, level, category, source: Some(loc), fields: {} })
   } else {
     None
   }

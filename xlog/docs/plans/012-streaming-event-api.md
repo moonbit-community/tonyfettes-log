@@ -1,5 +1,42 @@
 # Streaming event API checkpoints
 
+## 2026-05-29 no-finished checkpoint
+
+### Goal
+
+Keep `Event` as a minimal low-level structured writer for compiler-generated
+conditional streaming.
+
+### Accepted design
+
+- Remove `Event.finished`.
+- `Event::write_object_begin` always clears the current field map.
+- `Event::write_object_field` always writes into the field map.
+- `Event::write_object_end` always emits the event once per call.
+- Repeated `write_object_end` calls and writes after end are no longer guarded;
+  hand-written protocol misuse is not made safe by `Event`.
+
+### Target files and surfaces
+
+- `xlog/event.mbt`
+- `xlog/log.mbt`
+
+### API and interface diff
+
+- No public signature changes.
+- Internal behavior changes from defensive idempotent end to unchecked protocol
+  calls.
+
+### Validation plan
+
+```sh
+moon fmt xlog/event.mbt xlog/log.mbt
+moon check xlog xlog/examples
+moon test xlog
+moon run xlog/examples/lorem
+git diff --check
+```
+
 ## 2026-05-29 nested fields checkpoint
 
 ### Goal
