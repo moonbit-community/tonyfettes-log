@@ -42,16 +42,7 @@ impl Handler for FailingHandler with fn handle(
 
 ///|
 fn test_entry(message : String) -> Entry {
-  Entry(level=Info, fields={ "message": message })
-}
-
-///|
-fn emit(event : Event?, message : String) -> Unit {
-  if event is Some(event) {
-    event.write_object_begin()
-    event.write_object_field("message", message)
-    event.write_object_end()
-  }
+  Entry(Info, { "message": message })
 }
 
 ///|
@@ -64,8 +55,8 @@ test "package-level functions use the default logger" {
   }
   logger.set_handler(MemoryHandler::{ entries, })
   logger.set_level(Debug)
-  emit(info(), "global info")
-  emit(debug(), "global debug")
+  info({ "message": "global info" })
+  debug({ "message": "global debug" })
   guard entries is [info_entry, debug_entry] else {
     fail("expect exactly two entries")
   }
@@ -138,7 +129,7 @@ test "logger swallows handler errors" {
   }
   let file = File(path)
   file.close()
-  emit(Logger(file).info(), "after close")
+  Logger(file).info({ "message": "after close" })
 }
 
 ///|

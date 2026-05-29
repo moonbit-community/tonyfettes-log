@@ -99,85 +99,93 @@ pub fn Logger::set_level(self : Logger, level : Level) -> Unit {
 }
 
 ///|
-/// Start a log event at `level` if it is enabled.
+/// Emit a log entry at `level` with `fields` if the level is enabled.
 #callsite(autofill(loc))
 pub fn Logger::event(
   self : Logger,
   level : Level,
+  fields : Map[String, Json],
   category? : String,
   loc~ : SourceLoc,
-) -> Event? {
+) -> Unit {
   if self.is_level_enabled(level, category?) {
-    Some(Event::{ logger: self, entry: Entry(level~, category?, source=loc) })
-  } else {
-    None
+    let entry = Entry(level, fields, category?, source=loc)
+    self.handler.handle(entry) catch {
+      _ => ()
+    }
   }
 }
 
 ///|
-/// Start a `Fatal` event if it is enabled.
+/// Emit a `Fatal` entry with `fields` if the level is enabled.
 #callsite(autofill(loc))
 pub fn Logger::fatal(
   self : Logger,
+  fields : Map[String, Json],
   category? : String,
   loc~ : SourceLoc,
-) -> Event? {
-  self.event(Fatal, category?, loc~)
+) -> Unit {
+  self.event(Fatal, fields, category?, loc~)
 }
 
 ///|
-/// Start an `Error` event if it is enabled.
+/// Emit an `Error` entry with `fields` if the level is enabled.
 #callsite(autofill(loc))
 pub fn Logger::error(
   self : Logger,
+  fields : Map[String, Json],
   category? : String,
   loc~ : SourceLoc,
-) -> Event? {
-  self.event(Error, category?, loc~)
+) -> Unit {
+  self.event(Error, fields, category?, loc~)
 }
 
 ///|
-/// Start a `Warn` event if it is enabled.
+/// Emit a `Warn` entry with `fields` if the level is enabled.
 #callsite(autofill(loc))
 pub fn Logger::warn(
   self : Logger,
+  fields : Map[String, Json],
   category? : String,
   loc~ : SourceLoc,
-) -> Event? {
-  self.event(Warn, category?, loc~)
+) -> Unit {
+  self.event(Warn, fields, category?, loc~)
 }
 
 ///|
-/// Start an `Info` event if it is enabled.
+/// Emit an `Info` entry with `fields` if the level is enabled.
 #callsite(autofill(loc))
 pub fn Logger::info(
   self : Logger,
+  fields : Map[String, Json],
   category? : String,
   loc~ : SourceLoc,
-) -> Event? {
-  self.event(Info, category?, loc~)
+) -> Unit {
+  self.event(Info, fields, category?, loc~)
 }
 
 ///|
-/// Start a `Debug` event if it is enabled.
+/// Emit a `Debug` entry with `fields` if the level is enabled.
 #callsite(autofill(loc))
 pub fn Logger::debug(
   self : Logger,
+  fields : Map[String, Json],
   category? : String,
   loc~ : SourceLoc,
-) -> Event? {
-  self.event(Debug, category?, loc~)
+) -> Unit {
+  self.event(Debug, fields, category?, loc~)
 }
 
 ///|
-/// Start a `Trace` event if it is enabled.
+/// Emit a `Trace` entry with `fields` if the level is enabled.
 #callsite(autofill(loc))
 pub fn Logger::trace(
   self : Logger,
+  fields : Map[String, Json],
   category? : String,
   loc~ : SourceLoc,
-) -> Event? {
-  self.event(Trace, category?, loc~)
+) -> Unit {
+  self.event(Trace, fields, category?, loc~)
 }
 
 ///|
@@ -200,50 +208,79 @@ pub fn global() -> Logger {
 }
 
 ///|
-/// Start a log event at `level` with the global logger if it is enabled.
+/// Emit a log entry at `level` with `fields` through the global logger.
 #callsite(autofill(loc))
-pub fn event(level : Level, category? : String, loc~ : SourceLoc) -> Event? {
-  global_logger.event(level, category?, loc~)
+pub fn event(
+  level : Level,
+  fields : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  global_logger.event(level, fields, category?, loc~)
 }
 
 ///|
-/// Start a `Fatal` event with the global logger if it is enabled.
+/// Emit a `Fatal` entry with `fields` through the global logger.
 #callsite(autofill(loc))
-pub fn fatal(category? : String, loc~ : SourceLoc) -> Event? {
-  global_logger.fatal(category?, loc~)
+pub fn fatal(
+  fields : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  global_logger.fatal(fields, category?, loc~)
 }
 
 ///|
-/// Start an `Error` event with the global logger if it is enabled.
+/// Emit an `Error` entry with `fields` through the global logger.
 #callsite(autofill(loc))
-pub fn error(category? : String, loc~ : SourceLoc) -> Event? {
-  global_logger.error(category?, loc~)
+pub fn error(
+  fields : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  global_logger.error(fields, category?, loc~)
 }
 
 ///|
-/// Start a `Warn` event with the global logger if it is enabled.
+/// Emit a `Warn` entry with `fields` through the global logger.
 #callsite(autofill(loc))
-pub fn warn(category? : String, loc~ : SourceLoc) -> Event? {
-  global_logger.warn(category?, loc~)
+pub fn warn(
+  fields : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  global_logger.warn(fields, category?, loc~)
 }
 
 ///|
-/// Start an `Info` event with the global logger if it is enabled.
+/// Emit an `Info` entry with `fields` through the global logger.
 #callsite(autofill(loc))
-pub fn info(category? : String, loc~ : SourceLoc) -> Event? {
-  global_logger.info(category?, loc~)
+pub fn info(
+  fields : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  global_logger.info(fields, category?, loc~)
 }
 
 ///|
-/// Start a `Debug` event with the global logger if it is enabled.
+/// Emit a `Debug` entry with `fields` through the global logger.
 #callsite(autofill(loc))
-pub fn debug(category? : String, loc~ : SourceLoc) -> Event? {
-  global_logger.debug(category?, loc~)
+pub fn debug(
+  fields : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  global_logger.debug(fields, category?, loc~)
 }
 
 ///|
-/// Start a `Trace` event with the global logger if it is enabled.
+/// Emit a `Trace` entry with `fields` through the global logger.
 #callsite(autofill(loc))
-pub fn trace(category? : String, loc~ : SourceLoc) -> Event? {
-  global_logger.trace(category?, loc~)
+pub fn trace(
+  fields : Map[String, Json],
+  category? : String,
+  loc~ : SourceLoc,
+) -> Unit {
+  global_logger.trace(fields, category?, loc~)
 }
