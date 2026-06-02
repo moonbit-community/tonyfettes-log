@@ -1,93 +1,52 @@
 ///|
-fn emit(event : @xlog.Event?, write : (@xlog.Event) -> Unit) -> Unit {
-  if event is Some(event) {
-    event.write_object_begin()
-    write(event)
-    event.write_object_end()
-  }
-}
-
-///|
 fn main {
   let config = @xlog.Config::from_env() catch { _ => @xlog.Config() }
   let logger = @xlog.Logger(@xlog.Stdout(), config~)
-  emit(logger.error(category="lorem"), event => {
-    event.write_object_field("message", "failed to parse paragraph")
-    event.write_object_field("line", 42)
-    event.write_object_field("token", "dolor")
-  })
-  emit(logger.warn(category="lorem"), event => {
-    event.write_object_field("message", "using fallback corpus")
-    event.write_object_field("source", "embedded")
-  })
-  emit(logger.info(category="lorem"), event => {
-    event.write_object_field("message", "generated lorem paragraph")
-    event.write_object_field("words", 128)
-    event.write_object_field("seed", "ipsum")
-  })
-  emit(logger.debug(category="lorem.parser"), event => {
-    event.write_object_field("message", "normalized input text")
-    event.write_object_field("chars", 738)
-    event.write_object_field("language", "latin")
-  })
-  emit(logger.trace(category="lorem.parser.lexer"), event => {
-    event.write_object_field("message", "accepted token")
-    event.write_object_field("kind", "word")
-    event.write_object_field("value", "ipsum")
-  })
-  emit(logger.debug(category="lorem.db"), event => {
-    event.write_object_field("message", "selected phrase batch")
-    event.write_object_field("batch", 7)
-    event.write_object_field("rows", 3)
-  })
-  emit(logger.trace(category="lorem.db"), event => {
-    event.write_object_field("message", "phrase candidate")
-    event.write_object_field("candidate", "consectetur adipiscing elit")
-  })
-  emit(logger.info(category="lorem.cache"), event => {
-    event.write_object_field("message", "cache warmed")
-    event.write_object_field("entries", 12)
-  })
-  emit(logger.debug(category="lorem.cache"), event => {
-    event.write_object_field("message", "cache hit")
-    event.write_object_field("key", "paragraph:seed:ipsum")
-  })
-  emit(logger.warn(category="lorem.net"), event => {
-    event.write_object_field("message", "remote corpus unavailable")
-    event.write_object_field("host", "example.invalid")
-  })
-  emit(logger.debug(category="lorem.net"), event => {
-    event.write_object_field("message", "retry scheduled")
-    event.write_object_field("delay_ms", 250)
-  })
-  emit(logger.debug(category="lorem.worker"), event => {
-    event.write_object_field("message", "scheduled renderer job")
-    event.write_object_field("queue", "lorem")
-    event.write_object_field("attempt", 1)
-  })
-  emit(logger.trace(category="lorem.worker"), event => {
-    event.write_object_field("message", "renderer job payload")
-    event.write_object_field("payload", "sed do eiusmod tempor")
-  })
-  emit(logger.info(category="lorem.export"), event => {
-    event.write_object_field("message", "export completed")
-    event.write_object_field("format", "txt")
-  })
-  emit(logger.debug(category="lorem.export.markdown"), event => {
-    event.write_object_field("message", "rendered heading")
-    event.write_object_field("level", 2)
-  })
-  emit(logger.trace(category="lorem.export.markdown"), event => {
-    event.write_object_field("message", "rendered span")
-    event.write_object_field("style", "emphasis")
-  })
-  emit(logger.info(category="lorem.ui"), event => {
-    event.write_object_field("message", "preview refreshed")
-    event.write_object_field("pane", "output")
-  })
-  emit(logger.debug(category="lorem.ui"), event => {
-    event.write_object_field("message", "cursor moved")
-    event.write_object_field("row", 3)
-    event.write_object_field("col", 18)
-  })
+  logger.error(category="lorem") <?
+    { "message": "failed to parse paragraph", "line": 42, "token": "dolor" }
+  logger.warn(category="lorem") <?
+    { "message": "using fallback corpus", "source": "embedded" }
+  logger.info(category="lorem") <?
+    { "message": "generated lorem paragraph", "words": 128, "seed": "ipsum" }
+  logger.debug(category="lorem.parser") <?
+    { "message": "normalized input text", "chars": 738, "language": "latin" }
+  logger.trace(category="lorem.parser.lexer") <?
+    { "message": "accepted token", "kind": "word", "value": "ipsum" }
+  logger.debug(category="lorem.db") <?
+    { "message": "selected phrase batch", "batch": 7, "rows": 3 }
+  logger.trace(category="lorem.db") <?
+    {
+      "message": "phrase candidate",
+      "candidate": "consectetur adipiscing elit",
+    }
+  logger.info(category="lorem.cache") <?
+    { "message": "cache warmed", "entries": 12 }
+  logger.debug(category="lorem.cache") <?
+    { "message": "cache hit", "key": "paragraph:seed:ipsum" }
+  logger.warn(category="lorem.net") <?
+    { "message": "remote corpus unavailable", "host": "example.invalid" }
+  logger.debug(category="lorem.net") <?
+    { "message": "retry scheduled", "delay_ms": 250 }
+  logger.debug(category="lorem.worker") <?
+    { "message": "scheduled renderer job", "queue": "lorem", "attempt": 1 }
+  logger.trace(category="lorem.worker") <?
+    { "message": "renderer job payload", "payload": "sed do eiusmod tempor" }
+  logger.info(category="lorem.export") <?
+    { "message": "export completed", "format": "txt" }
+  logger.debug(category="lorem.export.markdown") <?
+    { "message": "rendered heading", "level": 2 }
+  logger.trace(category="lorem.export.markdown") <?
+    { "message": "rendered span", "style": "emphasis" }
+  logger.info(category="lorem.ui") <?
+    { "message": "preview refreshed", "pane": "output" }
+  logger.debug(category="lorem.ui") <?
+    { "message": "cursor moved", "row": 3, "col": 18 }
+  @xlog.global().set_handler(@xlog.Stdout())
+  @xlog.global().set_config(config)
+  @xlog.info(category="lorem.cli") <?
+    { "message": "started lorem command", "mode": "preview" }
+  @xlog.debug(category="lorem.cli") <?
+    { "message": "parsed command flags", "count": 3 }
+  @xlog.warn(category="lorem.cli") <?
+    { "message": "using default output width", "columns": 80 }
 }

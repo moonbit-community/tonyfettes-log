@@ -22,37 +22,13 @@ fn reset_file(path : String) -> Unit {
 }
 
 ///|
-fn emit(event : @xlog.Event?, message : String) -> Unit {
-  if event is Some(event) {
-    event.write_object_begin()
-    event.write_object_field("message", message)
-    event.write_object_end()
-  }
-}
-
-///|
-fn[T : ToJson] emit_field(
-  event : @xlog.Event?,
-  message : String,
-  key : String,
-  value : T,
-) -> Unit {
-  if event is Some(event) {
-    event.write_object_begin()
-    event.write_object_field("message", message)
-    event.write_object_field(key, value)
-    event.write_object_end()
-  }
-}
-
-///|
 test "file logger factory" {
   let path = "_build/test.file.logger"
   reset_file(path)
   let file = @xlog.File(path)
   defer file.close()
   let logger = @xlog.Logger(file)
-  emit(logger.warn(category="app"), "file warning")
+  logger.warn(category="app") <? { "message": "file warning" }
   guard read_entries(path) is [line] else { fail("expect exactly one line") }
   guard line is Object(object) else { fail("expect an object") }
   guard object.get("timestamp") is Some(String(_)) else {
@@ -82,7 +58,7 @@ test "event writes structured fields" {
   let file = @xlog.File(path)
   defer file.close()
   let logger = @xlog.Logger(file)
-  emit_field(logger.info(category="app"), "listening", "port", 8080)
+  logger.info(category="app") <? { "message": "listening", "port": 8080 }
   guard read_entries(path) is [line] else { fail("expect exactly one line") }
   guard line is Object(object) else { fail("expect an object") }
   guard object.get("message") is None else {
@@ -103,12 +79,12 @@ test "file logger opens in append mode" {
   {
     let first = @xlog.File(path)
     defer first.close()
-    emit(@xlog.Logger(first).info(category="app"), "first")
+    @xlog.Logger(first).info(category="app") <? { "message": "first" }
   }
   {
     let second = @xlog.File(path)
     defer second.close()
-    emit(@xlog.Logger(second).info(category="app"), "second")
+    @xlog.Logger(second).info(category="app") <? { "message": "second" }
   }
   guard read_entries(path) is [first_entry, second_entry] else {
     fail("expect exactly two lines")
@@ -130,7 +106,7 @@ test "per-call category" {
   let file = @xlog.File(path)
   defer file.close()
   let logger = @xlog.Logger(file)
-  emit(logger.info(category="app.db"), "Query executed")
+  logger.info(category="app.db") <? { "message": "Query executed" }
   guard read_entries(path) is [line] else { fail("expect exactly one line") }
   guard line is Object(object) else { fail("expect an object") }
   guard object.get("category") is Some("app.db") else {
@@ -149,12 +125,12 @@ test "logger levels are instance local" {
   defer file.close()
   let logger = @xlog.Logger(file, level=Warn)
   let db = @xlog.Logger(file, level=Warn)
-  emit(db.info(), "hidden")
+  db.info() <? { "message": "hidden" }
   logger.set_level(Info)
-  emit(db.info(), "still hidden")
-  emit(logger.info(category="app"), "parent visible")
+  db.info() <? { "message": "still hidden" }
+  logger.info(category="app") <? { "message": "parent visible" }
   db.set_level(Info)
-  emit(db.info(category="app.db"), "child visible")
+  db.info(category="app.db") <? { "message": "child visible" }
   guard read_entries(path) is [parent, child] else {
     fail("expect exactly two lines")
   }
@@ -183,11 +159,11 @@ test "config overrides category hierarchy" {
   defer file.close()
   let logger = @xlog.Logger(file, config~)
   config.set_category_level("app.db", Debug)
-  emit(logger.debug(category="app.db"), "db debug")
-  emit(logger.trace(category="app.db.query"), "query trace hidden")
-  emit(logger.debug(category="app.db2"), "db2 debug hidden")
+  logger.debug(category="app.db") <? { "message": "db debug" }
+  logger.trace(category="app.db.query") <? { "message": "query trace hidden" }
+  logger.debug(category="app.db2") <? { "message": "db2 debug hidden" }
   config.set_category_level("app.db.query", Trace)
-  emit(logger.trace(category="app.db.query"), "query trace")
+  logger.trace(category="app.db.query") <? { "message": "query trace" }
   guard read_entries(path) is [db_entry, query_entry] else {
     fail("expect exactly two lines")
   }
@@ -236,10 +212,10 @@ test "config reads default level and overrides from env" {
   let file = @xlog.File(path)
   defer file.close()
   let logger = @xlog.Logger(file, config~)
-  emit(logger.info(category="app"), "app info hidden")
-  emit(logger.warn(category="app"), "app warn")
-  emit(logger.debug(category="app.db"), "db debug")
-  emit(logger.trace(category="app.db.query"), "query trace")
+  logger.info(category="app") <? { "message": "app info hidden" }
+  logger.warn(category="app") <? { "message": "app warn" }
+  logger.debug(category="app.db") <? { "message": "db debug" }
+  logger.trace(category="app.db.query") <? { "message": "query trace" }
   guard read_entries(path) is [app_entry, db_entry, query_entry] else {
     fail("expect exactly three lines")
   }
@@ -271,10 +247,10 @@ test "top-level helpers accept category" {
   }
   @xlog.global().set_handler(file)
   @xlog.global().set_config(config)
-  emit(@xlog.debug(), "hidden without category")
-  emit(@xlog.debug(category="db"), "db debug")
-  emit(@xlog.info(category="db"), "db info")
-  emit(@xlog.warn(), "root warn")
+  @xlog.debug() <? { "message": "hidden without category" }
+  @xlog.debug(category="db") <? { "message": "db debug" }
+  @xlog.info(category="db") <? { "message": "db info" }
+  @xlog.warn() <? { "message": "root warn" }
   guard read_entries(path) is [db_debug, db_info, root_warn] else {
     fail("expect exactly three lines")
   }
@@ -311,7 +287,7 @@ test "global file handler remains alive after setup scope" {
     let file = @xlog.File(path)
     logger.set_handler(file)
   }
-  emit(@xlog.info(category="lifetime"), "after setup")
+  @xlog.info(category="lifetime") <? { "message": "after setup" }
   guard read_entries(path) is [entry] else { fail("expect exactly one line") }
   guard entry is Object(object) else { fail("expect an object") }
   guard object.get("category") is Some("lifetime") else {
@@ -332,8 +308,8 @@ test "config reads MOON_XLOG by default" {
   let file = @xlog.File(path)
   defer file.close()
   let logger = @xlog.Logger(file, config~)
-  emit(logger.debug(), "default env debug")
-  emit(logger.trace(), "default env trace hidden")
+  logger.debug() <? { "message": "default env debug" }
+  logger.trace() <? { "message": "default env trace hidden" }
   guard read_entries(path) is [entry] else { fail("expect exactly one line") }
   guard entry is Object(object) else { fail("expect an object") }
   guard object.get("fields") is Some({ "message": "default env debug", .. }) else {
@@ -370,7 +346,7 @@ test "multi destination logger writes to all files" {
   })
   let handlers : Array[&@xlog.Handler] = files.map(file => file)
   let logger = handlers |> @xlog.Multi() |> @xlog.Logger()
-  emit(logger.info(), "sync fanout")
+  logger.info() <? { "message": "sync fanout" }
   for p in ps {
     guard read_entries(p) is [line] else { fail("expect exactly one line") }
     guard line is Object(object) else { fail("expect an object") }
