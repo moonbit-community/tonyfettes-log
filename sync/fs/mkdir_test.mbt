@@ -24,7 +24,7 @@ test "rmdir recursive" {
   @fs.mkdir("\{path}/inner")
   @fs.write_file("\{path}/inner/file", "", create_mode=CreateOrTruncate)
   @fs.symlink("\{path}/symlink", target="../../target")
-  let result = try? @fs.rmdir(path)
+  let result = capture_result(() => @fs.rmdir(path))
   @fs.rmdir(path, recursive=true)
   assert_true(result is Err(_))
 }

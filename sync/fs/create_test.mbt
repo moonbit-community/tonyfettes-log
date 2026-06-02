@@ -68,7 +68,10 @@ test "create_mode test" {
   defer cleanup_dir(dir)
   let path = "\{dir}/create_exclusive_test"
   for create_mode in [@fs.OpenExisting, @fs.TruncateExisting] {
-    assert_true((try? @fs.open(path, mode=WriteOnly, create_mode~)) is Err(_))
+    assert_true(
+      capture_result(() => @fs.open(path, mode=WriteOnly, create_mode~))
+      is Err(_),
+    )
   }
   {
     let file = @fs.create(path, allow_existing=false)
@@ -76,9 +79,12 @@ test "create_mode test" {
     file.write("abcd")
   }
   inspect(@fs.read_file(path).text(), content="abcd")
-  assert_true((try? @fs.create(path, allow_existing=false)) is Err(_))
   assert_true(
-    (try? @fs.open(path, mode=WriteOnly, create_mode=CreateNew)) is Err(_),
+    capture_result(() => @fs.create(path, allow_existing=false)) is Err(_),
+  )
+  assert_true(
+    capture_result(() => @fs.open(path, mode=WriteOnly, create_mode=CreateNew))
+    is Err(_),
   )
   {
     let file = @fs.open(path, mode=WriteOnly, create_mode=OpenExisting)

@@ -20,7 +20,11 @@ pub async fn[T, H : Handler] with_logger(
     }
     // If `f` raises, drain the queue before re-raising so accepted entries are
     // still written instead of being cancelled with the task group.
-    let value = try? f(Logger::new(q, level~, category?))
+    let value = try f(Logger::new(q, level~, category?)) catch {
+      err => Err(err)
+    } noraise {
+      value => Ok(value)
+    }
     q.close()
     task.wait()
     value.unwrap_or_error()

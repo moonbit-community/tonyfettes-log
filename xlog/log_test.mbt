@@ -211,10 +211,13 @@ test "config overrides category hierarchy" {
 test "config rejects invalid categories" {
   let config = @xlog.Config()
   for category in ["", ".app", "app.", "app..db"] {
-    let result : Result[Unit, @xlog.ConfigError] = try? config.set_category_level(
-      category,
-      Debug,
-    )
+    let result : Result[Unit, @xlog.ConfigError] = try
+      config.set_category_level(category, Debug)
+    catch {
+      err => Err(err)
+    } noraise {
+      value => Ok(value)
+    }
     guard result is Err(_) else {
       fail("expect invalid category to be rejected")
     }
@@ -342,9 +345,13 @@ test "config reads MOON_XLOG by default" {
 test "config rejects invalid env directives" {
   let env = "MOON_LOG_TEST_INVALID_CONFIG"
   @env.set_env_var(env, "info,app..db=debug")
-  let result : Result[@xlog.Config, @xlog.ConfigError] = try? @xlog.Config::from_env(
-    env~,
-  )
+  let result : Result[@xlog.Config, @xlog.ConfigError] = try
+    @xlog.Config::from_env(env~)
+  catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
   @env.unset_env_var(env)
   guard result is Err(_) else {
     fail("expect invalid env directive to be rejected")

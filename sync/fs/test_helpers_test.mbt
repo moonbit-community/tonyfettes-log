@@ -3,6 +3,15 @@
 // Licensed under the Apache License, Version 2.0.
 
 ///|
+fn[T, E : Error] capture_result(f : () -> T raise E) -> Result[T, E] noraise {
+  try f() catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
+}
+
+///|
 fn cleanup_dir(path : String) -> Unit {
   @fs.rmdir(path, recursive=true) catch {
     _ => ()

@@ -28,9 +28,11 @@ test "walk failure" {
   let root = make_walk_fixture("sync-walk-failure")
   defer cleanup_dir(root)
   let log = []
-  let result = try? @fs.walk(root, max_concurrency=1, (path, _) => {
-    log.push(path)
-    raise Failure::Failure("failure when handling directory")
+  let result = capture_result(() => {
+    @fs.walk(root, max_concurrency=1, (path, _) => {
+      log.push(path)
+      raise Failure::Failure("failure when handling directory")
+    })
   })
   assert_true(result is Err(_))
   assert_eq(log.length(), 1)
@@ -42,12 +44,11 @@ test "walk allow_failure" {
   let root = make_walk_fixture("sync-walk-allow-failure")
   defer cleanup_dir(root)
   let log = []
-  let result = try? @fs.walk(root, allow_failure=true, max_concurrency=1, (
-    path,
-    _,
-  ) => {
-    log.push(path)
-    raise Failure::Failure("failure when handling directory")
+  let result = capture_result(() => {
+    @fs.walk(root, allow_failure=true, max_concurrency=1, (path, _) => {
+      log.push(path)
+      raise Failure::Failure("failure when handling directory")
+    })
   })
   assert_true(result is Ok(_))
   assert_eq(log.length(), 3)

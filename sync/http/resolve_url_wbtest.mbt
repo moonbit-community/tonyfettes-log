@@ -13,43 +13,56 @@
 // limitations under the License.
 
 ///|
+fn[T, E : Error] capture_result(f : () -> T raise E) -> Result[T, E] noraise {
+  try f() catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
+}
+
+///|
 test "resolve_url" {
   fn to_owned(result : (_, _, StringView)) {
     let (a, b, c) = result
     (a, b, c.to_owned())
   }
   debug_inspect(
-    try? to_owned(resolve_url("http://www.example.org")),
+    capture_result(() => to_owned(resolve_url("http://www.example.org"))),
     content=(
       #|Ok((Http, "www.example.org", "/"))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_url("http://www.example.org/path/to")),
+    capture_result(() => to_owned(resolve_url("http://www.example.org/path/to"))),
     content=(
       #|Ok((Http, "www.example.org", "/path/to"))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_url("https://www.example.org/path/to?search=q")),
+    capture_result(() => {
+      to_owned(resolve_url("https://www.example.org/path/to?search=q"))
+    }),
     content=(
       #|Ok((Https, "www.example.org", "/path/to?search=q"))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_url("ftp://www.example.org")),
+    capture_result(() => to_owned(resolve_url("ftp://www.example.org"))),
     content=(
       #|Err(UnsupportedProtocol("ftp"))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_url("http://www.example.org:10042")),
+    capture_result(() => to_owned(resolve_url("http://www.example.org:10042"))),
     content=(
       #|Ok((Http, "www.example.org:10042", "/"))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_url("http://www.example.org:10042/path")),
+    capture_result(() => {
+      to_owned(resolve_url("http://www.example.org:10042/path"))
+    }),
     content=(
       #|Ok((Http, "www.example.org:10042", "/path"))
     ),
@@ -64,37 +77,49 @@ test "resolve_host" {
   }
 
   debug_inspect(
-    try? to_owned(resolve_host("www.example.org", protocol=Http)),
+    capture_result(() => {
+      to_owned(resolve_host("www.example.org", protocol=Http))
+    }),
     content=(
       #|Ok(("www.example.org", 80))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_host("www.example.org", protocol=Https)),
+    capture_result(() => {
+      to_owned(resolve_host("www.example.org", protocol=Https))
+    }),
     content=(
       #|Ok(("www.example.org", 443))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_host("www.example.org:42", protocol=Http)),
+    capture_result(() => {
+      to_owned(resolve_host("www.example.org:42", protocol=Http))
+    }),
     content=(
       #|Ok(("www.example.org", 42))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_host("www.example.org:42", protocol=Https)),
+    capture_result(() => {
+      to_owned(resolve_host("www.example.org:42", protocol=Https))
+    }),
     content=(
       #|Ok(("www.example.org", 42))
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_host("www.example.org:0", protocol=Https)),
+    capture_result(() => {
+      to_owned(resolve_host("www.example.org:0", protocol=Https))
+    }),
     content=(
       #|Err(InvalidFormat)
     ),
   )
   debug_inspect(
-    try? to_owned(resolve_host("www.example.org:100042", protocol=Https)),
+    capture_result(() => {
+      to_owned(resolve_host("www.example.org:100042", protocol=Https))
+    }),
     content=(
       #|Err(InvalidFormat)
     ),

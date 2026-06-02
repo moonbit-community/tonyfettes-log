@@ -26,7 +26,11 @@ test "close is idempotent and write after close fails" {
   let file = File::open_append(path)
   file.close()
   file.close()
-  let result : Result[Unit, IOError] = try? file.write_string("closed")
+  let result : Result[Unit, IOError] = try file.write_string("closed") catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
   guard result is Err(IOError(message)) else {
     fail("expect write after close to fail")
   }

@@ -42,10 +42,16 @@ pub fn Logger::log(
   loc~ : SourceLoc,
 ) -> Unit {
   if self.is_level_enabled(level) {
-    guard (try? self.q.try_put(
+    let accepted = try
+      self.q.try_put(
         Entry(level~, category?=self.category, source=loc, message, fields?),
-      ))
-      is Ok(true)
+      )
+    catch {
+      _ => false
+    } noraise {
+      accepted => accepted
+    }
+    guard accepted
   }
 }
 

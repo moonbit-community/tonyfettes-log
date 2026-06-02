@@ -43,7 +43,10 @@ test "rename replace" {
   old_file.write("abcd")
   inspect(@fs.read_file(old_path).text(), content="abcd")
   inspect(@fs.read_file(new_path).text(), content="xyzw")
-  assert_true((try? @fs.rename(old_path, new_path, replace=false)) is Err(_))
+  assert_true(
+    capture_result(() => @fs.rename(old_path, new_path, replace=false))
+    is Err(_),
+  )
   @fs.rename(old_path, new_path, replace=true)
   inspect(@fs.read_file(new_path).text(), content="abcd")
   inspect(new_file.read_all().text(), content="xyzw")

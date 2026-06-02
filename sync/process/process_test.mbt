@@ -3,6 +3,15 @@
 // Licensed under the Apache License, Version 2.0.
 
 ///|
+fn[T, E : Error] capture_result(f : () -> T raise E) -> Result[T, E] noraise {
+  try f() catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
+}
+
+///|
 fn cleanup_process_test_dir(path : String) -> Unit {
   @fs.rmdir(path, recursive=true) catch {
     _ => ()
@@ -335,7 +344,9 @@ test "extra env without inherit" {
 
 ///|
 test "missing command raises os_error" {
-  let result = try? @process.run("sync-command-that-does-not-exist", [])
+  let result = capture_result(() => {
+    @process.run("sync-command-that-does-not-exist", [])
+  })
   guard result is Err(@os_error.OSError(_) as err) else {
     fail("result is not OSError")
   }
@@ -344,11 +355,13 @@ test "missing command raises os_error" {
 
 ///|
 test "missing cwd raises os_error" {
-  let result = try? @process.run(
-    "sh",
-    ["-c", "printf unreachable"],
-    cwd="/tmp/sync-cwd-does-not-exist",
-  )
+  let result = capture_result(() => {
+    @process.run(
+      "sh",
+      ["-c", "printf unreachable"],
+      cwd="/tmp/sync-cwd-does-not-exist",
+    )
+  })
   guard result is Err(@os_error.OSError(_) as err) else {
     fail("result is not OSError")
   }

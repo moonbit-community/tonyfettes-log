@@ -119,7 +119,13 @@ test "file handler reports write after close" {
   let file = File(path)
   file.close()
   file.close()
-  let result : Result[Unit, Error] = try? file.handle(test_entry("after close"))
+  let result : Result[Unit, Error] = try
+    file.handle(test_entry("after close"))
+  catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
   guard result is Err(@fs.IOError(message)) else {
     fail("expect direct file handler call to report IOError")
   }
@@ -151,7 +157,11 @@ test "multi attempts every handler and returns collected errors" {
     MemoryHandler::{ entries: ok_entries },
     FailingHandler::{ messages: second_messages },
   ]
-  let result = try? Multi(handlers).handle(test_entry("fanout"))
+  let result = try Multi(handlers).handle(test_entry("fanout")) catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
   guard result is Err(MultiError(errors)) else {
     fail("expect multi handler to report collected errors")
   }
