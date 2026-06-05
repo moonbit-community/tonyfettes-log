@@ -30,13 +30,16 @@ pub impl ToJson for Entry with fn to_json(self : Entry) -> Json {
     "timestamp": self.timestamp.to_string(),
     "level": self.level.to_string(),
     "message": self.message,
-    "fields": self.fields.to_json(),
   }
   if self.category is Some(category) {
     object["category"] = Json::string(category)
   }
   if self.source is Some(source) {
     object["source"] = Json::string(source.to_string())
+  }
+  // Hoist structured fields to the top level; on a name clash the field wins.
+  for key, value in self.fields {
+    object[key] = value
   }
   Json::object(object)
 }
