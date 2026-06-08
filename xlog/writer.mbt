@@ -32,10 +32,22 @@ pub fn Stdout::Stdout(format? : Format = Jsonl) -> Stdout {
 }
 
 ///|
-pub impl Handler for Stdout with fn handle(self : Stdout, entry : Entry) -> Unit {
-  match self.format {
-    Text => println(entry.to_string())
-    Jsonl => println(entry.to_json().stringify())
+pub impl Handler for Stdout with fn handle(self : Stdout, entry : Entry) -> Unit raise {
+  let line = match self.format {
+    Text => entry.to_string()
+    Jsonl => entry.to_json().stringify()
+  }
+  stdout_write_line(@utf8.encode(line))
+}
+
+///|
+#borrow(data)
+extern "C" fn stdout_write_line_ffi(data : Bytes) -> Int = "tonyfettes_xlog_stdout_write_line"
+
+///|
+fn stdout_write_line(data : Bytes) -> Unit raise @fs.IOError {
+  guard stdout_write_line_ffi(data) == 0 else {
+    raise @fs.IOError("@xlog.Stdout::handle(): failed to write stdout")
   }
 }
 
