@@ -24,6 +24,7 @@ implementation uses MoonBit `println`, which does not explicitly flush stdout.
 - `xlog/writer.mbt`
 - `xlog/pkg.generated.mbti`
 - New `xlog/native.c`
+- New `xlog/stdout_flush_test` module for the async regression test.
 
 ## API and interface diff
 
@@ -49,6 +50,15 @@ whose current responsibility is file handles.
 Add the private native stdout FFI and replace `Stdout.handle`'s `println` calls
 with the flushed write path.
 
+## Test extension
+
+Add a separate workspace module at `xlog/stdout_flush_test` so the regression
+test can run a child `moon run` process with `--target-dir`. The parent async
+test captures the child stdout through `moonbitlang/async/process`, reads one
+line with a short timeout while the child is still sleeping, and then cancels
+the child. Reading the log line before child exit proves the stdout handler
+flushed the line.
+
 ## Validation plan
 
 Run from `xlog/`:
@@ -58,6 +68,12 @@ moon check
 moon test
 moon fmt
 moon info
+```
+
+Run the regression module:
+
+```sh
+moon test xlog/stdout_flush_test/stdout_flush_test.mbt
 ```
 
 Review `xlog/pkg.generated.mbti` for unintended public API changes.

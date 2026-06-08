@@ -1,6 +1,7 @@
 members = [
   "sync",
   "xlog",
+  "xlog/stdout_flush_test",
   "xlog/examples",
   "slog",
   "alog",
