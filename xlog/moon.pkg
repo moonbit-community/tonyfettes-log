@@ -1,6 +1,7 @@
 supported_targets = "native"
 
 import {
+  "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/env",
   "moonbitlang/x/time" @x/time,
   "moonbitlang/core/debug",
@@ -16,3 +17,7 @@ import {
 import {
   "moonbitlang/x/fs" @x/fs,
 } for "wbtest"
+
+options(
+  "native-stub": [ "native.c" ],
+)

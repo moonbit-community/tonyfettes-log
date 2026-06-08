@@ -1,0 +1,10 @@
+import {
+  "tonyfettes/xlog",
+  "moonbitlang/async",
+}
+
+supported_targets = "native"
+
+options(
+  "is-main": true,
+)
