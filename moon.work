@@ -1,8 +1,0 @@
-members = [
-  "sync",
-  "xlog",
-  "xlog/examples",
-  "slog",
-  "alog",
-]
-preferred_target = "native"

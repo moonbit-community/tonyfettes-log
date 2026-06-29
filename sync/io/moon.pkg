@@ -1,5 +1,0 @@
-import {
-  "moonbitlang/core/cmp",
-  "moonbitlang/core/encoding/utf8",
-  "moonbitlang/core/json",
-}

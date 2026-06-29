@@ -1,9 +1,0 @@
-import {
-  "moonbitlang/core/cmp",
-}
-
-import {
-  "tonyfettes/sync/fs",
-} for "test"
-
-supported_targets = "native"

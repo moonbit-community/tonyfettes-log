@@ -1,133 +1,161 @@
-# MoonBit Logger Experiments
+# xlog
 
-This repository collects three current attempts at a MoonBit logging package.
-They share the same basic log vocabulary: levels, entries, structured fields,
-source locations, category names, text output, and JSON-line output. The main
-difference is the I/O model each implementation is exploring.
+`tonyfettes/xlog` is a native-only structured logger with top-level helpers,
+logger instances, categories, structured fields, stdout/file/multi outputs, and
+`MOON_XLOG` filtering.
 
-## Directory Map
+Logger calls are best-effort: output errors are ignored by `Logger`, while
+handlers can still report errors when called directly or wrapped.
 
-| Directory | Package | Main idea |
-| --- | --- | --- |
-| `xlog/` | `tonyfettes/xlog` | Original synchronous logger built directly on `moonbitlang/x` file and stdout APIs. |
-| `slog/` | `tonyfettes/slog` | Sync-backed logger that keeps the core logger/config model but writes through `tonyfettes/sync` writers. |
-| `alog/` | `tonyfettes/alog` | Async-scoped logger that queues entries and writes them with `moonbitlang/async` I/O. |
+## Quick Start
 
-The generated interfaces in each package (`pkg.generated.mbti`) are the best
-quick reference for the public surface of each experiment.
+Use top-level helpers when passing a logger around would be noisy:
 
-## `xlog`: `moonbitlang/x` Baseline
+```moonbit
+if @xlog.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "server started")
+  event.write_object_field("port", 8080)
+  event.write_object_end()
+}
+```
 
-`xlog` is the baseline implementation. It exposes a `Logger`, a `Handler` trait,
-`Stdout`, `File`, `Multi`, `Format`, `Config`, and package-level default logger
-functions such as `info` and `debug`. The package-level default root logger is
-configured through `global().set_handler(...)`, `global().set_config(...)`, and
-`global().set_level(...)`.
+Use a `Logger` when you want a specific output:
 
-Strengths:
+```moonbit
+let logger = @xlog.Logger(@xlog.Stdout())
 
-- Broadest compatibility with the first logger API shape.
-- Includes file and stdout sinks as first-class public types.
-- Supports `MOON_XLOG` parsing, default levels, and hierarchical category
-  overrides.
-- Useful as a regression baseline for behavior and tests.
+if logger.debug(category="app.db") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "query plan")
+  event.write_object_end()
+}
+```
 
-Tradeoffs:
+This API is shaped for a future conditional streaming form where a disabled
+event skips evaluating structured fields.
 
-- The file writer is native-only and keeps an explicit append-mode file handle,
-  so callers must close it explicitly.
-- Output concerns and sink ownership are bundled into the logger package.
-- It depends on `moonbitlang/x` for I/O.
+## Levels And Categories
 
-## `slog`: Sync Writer Experiment
+The default level is `Info`. Level order, from least to most verbose:
 
-`slog` keeps the same core `Logger`, `Level`, `Entry`, and `Config` concepts,
-but changes the output boundary from a package-owned `Writer` sink to `Handler`
-implementations over `tonyfettes/sync/io.Writer`.
+```text
+Fatal Error Warn Info Debug Trace
+```
 
-Its public output types are `TextHandler`, `JsonHandler`, and `MultiHandler`.
-The default logger writes to `@sync/stdio.stdout`, while tests demonstrate file
-logging by opening sync files and passing them to handlers.
+A record is emitted when its level is less than or equal to the effective level.
+Category overrides are hierarchical, so `app.db.query` falls back to `app.db`,
+then `app`, then the logger's level.
 
-Strengths:
+Logger methods and top-level helpers return `None` when their level/category is
+disabled, or `Some(event)` when fields should be written:
 
-- Better separation between logging and I/O ownership.
-- Works with existing `tonyfettes/sync` writers instead of inventing logger
-  owned file/stdout wrappers.
-- Keeps the configuration and category filtering behavior from the baseline.
-- Avoids the `xlog` file read-append-rewrite strategy when callers provide an
-  append-mode sync file.
+```moonbit
+let logger = @xlog.Logger(@xlog.Stdout())
 
-Tradeoffs:
+if logger.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "server started")
+  event.write_object_end()
+}
+```
 
-- The public surface is not source-compatible with `xlog` sink construction:
-  `File`, `Stdout`, `Format`, `Writer`, and `Multi` are replaced by handlers.
-- Callers own file lifecycle and closing.
-- Timestamps still use `moonbitlang/x/time`, so the package is not fully
-  detached from `moonbitlang/x`.
+Create separate logger instances when components need independent levels while
+sharing the same output handler.
 
-## `alog`: Async Scoped Experiment
+All fields written through an event are user fields. A field named `"message"`
+is stored under `fields` like any other field; it is not promoted to top-level
+metadata.
 
-`alog` is a different shape. It provides `with_logger(handler, fn, ...)`, creates
-an async queue, runs a background task that drains log entries, and gives the
-callback a scoped `Logger`.
+## Configuration
 
-Handlers write to `moonbitlang/async/io.Writer`; `Mux` fans writes out to
-multiple async writers. Unlike `xlog` and `slog`, `alog` does not currently
-include `Config`, package-level default logging functions, or environment-based
-filtering.
+`Config::from_env()` reads `MOON_XLOG` by default:
 
-Strengths:
+```sh
+MOON_XLOG=debug
+MOON_XLOG='warn,app.db=debug,app.db.query=trace'
+```
 
-- Natural fit for async applications and async file/socket writers.
-- Scoped lifecycle makes flushing explicit: accepted entries are drained before
-  `with_logger` returns.
-- Queueing separates log call sites from the actual write operation.
-- `Mux` supports fan-out to multiple async writers.
+You can also build config directly:
 
-Tradeoffs:
+```moonbit
+let config = @xlog.Config(level=@xlog.Warn)
+config.set_category_level("app.db", @xlog.Debug)
 
-- It is not a drop-in replacement for the sync logger API.
-- Filtering is simpler: only logger level and child level behavior are present.
-- It depends on the current `moonbitlang/async` runtime model. The notes in
-  `alog/docs/fork-async.md` call out broader runtime-thread work before treating
-  this as a cross-thread logging foundation.
-- The queue is unbounded, and enqueue failure is currently ignored at the call
-  site.
+let logger = @xlog.Logger(@xlog.Stdout(), config~)
+if logger.debug(category="app.db") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "query plan")
+  event.write_object_end()
+}
+```
 
-## Rubric
+Invalid levels, invalid directives, and invalid categories raise `ConfigError`.
+The package global logger catches invalid `MOON_XLOG` and falls back to `Info`.
 
-Scores are `1` to `5`, where `5` is the strongest fit. The weighted total is
-biased toward choosing a production-ready synchronous logger. If the goal is an
-async-first logger, increase the weight of async lifecycle and backpressure.
+## Outputs
 
-| Criterion | Weight | `xlog` | `slog` | `alog` | Notes |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Runtime model fit for sync logging | 15 | 4 | 5 | 2 | `slog` aligns with the sync package; `alog` is intentionally async-scoped. |
-| Public API clarity and size | 15 | 3 | 4 | 3 | `slog` has a smaller sink surface; `xlog` is familiar but bundles more concepts. |
-| Sink flexibility | 15 | 3 | 5 | 4 | `slog` accepts any sync writer; `alog` accepts async writers; `xlog` centers its own writers. |
-| File/stdout write quality | 15 | 4 | 4 | 4 | `xlog` now uses a native append-mode file handler; `slog` and `alog` rely on writers supplied by callers. |
-| Filtering and configuration | 10 | 5 | 5 | 2 | `xlog` and `slog` have env parsing and hierarchical category overrides. |
-| Async lifecycle and backpressure | 10 | 1 | 2 | 4 | `alog` has scoped drain behavior, but still needs clearer queue/backpressure policy. |
-| Test coverage for current behavior | 10 | 4 | 4 | 4 | All three have focused tests for core behavior; they exercise different I/O models. |
-| Publishing risk and implementation complexity | 10 | 3 | 4 | 2 | `alog` carries more runtime-model risk; `slog` is the narrowest sync evolution. |
-| **Weighted total** | **100** | **68** | **84** | **63** | Higher is better for the synchronous logger goal. |
+`Stdout` defaults to one JSON object per line. Use `Text` for human-readable
+key-value output:
 
-## Decision Guide
+```moonbit
+@xlog.global().set_handler(@xlog.Stdout())
+@xlog.global().set_handler(@xlog.Stdout(format=@xlog.Text))
+```
 
-- Use `xlog` as the behavior baseline and compatibility reference.
-- Prefer `slog` as the main synchronous logger direction if the goal is a
-  reusable package with cleaner sink ownership and better write primitives.
-- Keep `alog` as the async experiment. It is promising for async applications,
-  but it should not be judged by sync logger compatibility alone.
+`File` opens an append-mode file and defaults to `Jsonl`:
 
-## Open Questions
+```moonbit
+let file = @xlog.File("_build/app.log")
+@xlog.global().set_handler(file)
+if @xlog.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "written to file")
+  event.write_object_end()
+}
+```
 
-- Should `slog` reintroduce convenience constructors such as `File` or `Stdout`,
-  or should it keep file/stdout lifecycle fully outside the logger package?
-- Should `slog` keep using `moonbitlang/x/time`, or should timestamp handling
-  move to a dependency that matches the sync package direction?
-- Should `alog` add config/env filtering, bounded queues, or explicit drop/error
-  handling before it is considered a package candidate?
-- Should `MOON_XLOG` and `MOON_SLOG` stay experiment-specific, or should the
-  eventual package converge on one environment variable name?
+`File` is native-only and uses a small ISO C `FILE *` stub. The native handle
+closes automatically when the handler is no longer reachable; call `close()`
+only after removing it from long-lived loggers. It does not provide
+multi-process atomic logging guarantees.
+
+`Multi` fans out to several handlers:
+
+```moonbit
+let file = @xlog.File("_build/app.log")
+let handlers : Array[&@xlog.Handler] = [@xlog.Stdout(), file]
+@xlog.global().set_handler(@xlog.Multi(handlers))
+```
+
+`Multi` attempts every child handler. Direct `Multi.handle(entry)` calls can
+raise `MultiError(Array[Error])`; ordinary logger calls swallow that error.
+
+## Global Logger
+
+Top-level helpers use `@xlog.global()`, a process-wide root logger:
+
+```moonbit
+let config = @xlog.Config::from_env() catch { _ => @xlog.Config() }
+
+@xlog.global().set_config(config)
+@xlog.global().set_level(@xlog.Debug)
+if @xlog.info(category="app") is Some(event) {
+  event.write_object_begin()
+  event.write_object_field("message", "top-level record")
+  event.write_object_end()
+}
+```
+
+`global()` is a root logger, not a replaceable default logger. Configure it with
+`set_handler`, `set_config`, and `set_level`.
+
+## Example
+
+The `examples/lorem` package demonstrates category filtering:
+
+```sh
+moon run examples/lorem
+MOON_XLOG=debug moon run examples/lorem
+MOON_XLOG='warn,lorem.db=trace,lorem.worker=debug,lorem.parser.lexer=trace' moon run examples/lorem
+```
