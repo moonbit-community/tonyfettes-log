@@ -43,9 +43,7 @@ pub(all) suberror MultiError {
 }
 
 // Types and methods
-pub struct Config {
-  // private fields
-}
+type Config
 pub fn Config::Config(level? : Level) -> Self
 pub fn Config::from_env(env? : String, level? : Level) -> Self raise ConfigError
 pub fn Config::set_category_level(Self, String, Level) -> Unit raise ConfigError
@@ -65,9 +63,7 @@ pub fn Event::write_object_begin(Self) -> Unit
 pub fn Event::write_object_end(Self) -> Unit
 pub fn[T : ToJson] Event::write_object_field(Self, String, T) -> Unit
 
-pub struct File {
-  // private fields
-}
+type File
 pub fn File::File(String, format? : Format) -> Self raise @fs.IOError
 pub fn File::close(Self) -> Unit
 pub impl Handler for File
@@ -87,9 +83,7 @@ pub(all) enum Level {
 } derive(Compare, Eq)
 pub impl Show for Level
 
-pub struct Logger {
-  // private fields
-}
+type Logger
 pub fn[H : Handler] Logger::Logger(H, level? : Level, config? : Config) -> Self
 #callsite(autofill(loc))
 pub fn Logger::debug(Self, category? : String, loc~ : SourceLoc) -> Event?
@@ -112,9 +106,7 @@ pub fn Logger::warn(Self, category? : String, loc~ : SourceLoc) -> Event?
 pub(all) struct Multi(Array[&Handler])
 pub impl Handler for Multi
 
-pub struct Stdout {
-  // private fields
-}
+type Stdout
 pub fn Stdout::Stdout(format? : Format) -> Self
 pub impl Handler for Stdout
 

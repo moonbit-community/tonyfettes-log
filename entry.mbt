@@ -19,7 +19,7 @@ fn Entry::Entry(
   category? : String,
   source? : SourceLoc,
   timestamp? : Int64 = @env.now().reinterpret_as_int64(),
-  fields? : Map[String, Json] = {},
+  fields? : Map[String, Json] = Map([]),
 ) -> Entry {
   let timestamp = try! @x/time.unix(
     timestamp / 1_000,

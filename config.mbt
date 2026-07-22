@@ -11,7 +11,7 @@ struct Config {
 ///|
 /// Create a configuration with the given root level.
 pub fn Config::Config(level? : Level = Info) -> Config {
-  Config::{ level, levels: {} }
+  Config::{ level, levels: Map([]) }
 }
 
 ///|
