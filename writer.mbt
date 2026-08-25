@@ -90,7 +90,7 @@ pub fn File::File(
 
 ///|
 fn File::write_entry(self : File, entry : Entry) -> Unit raise @fs.IOError {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   match self.format {
     Text => sb.write_string(entry.to_string())
     Jsonl => sb.write_string(entry.to_json().stringify())
