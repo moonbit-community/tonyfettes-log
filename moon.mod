@@ -13,7 +13,7 @@ keywords = [ "log", "logging", "structured-logging" ]
 description = "Native structured logging with levels and category-based filtering."
 
 import {
-  "moonbitlang/x@0.4.44",
+  "moonbitlang/x@0.5.1",
 }
 
 preferred_target = "native"
