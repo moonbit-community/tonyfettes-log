@@ -335,6 +335,15 @@ test "config rejects invalid env directives" {
 }
 
 ///|
+test "stderr handler writes both formats without raising" {
+  let logger = @xlog.Logger(@xlog.Stderr())
+  logger.error(category="stderr") <? { "message": "jsonl to stderr" }
+  logger.warn(category="stderr") <? { "message": "text to stderr" }
+  let text = @xlog.Logger(@xlog.Stderr(format=@xlog.Text))
+  text.info(category="stderr") <? { "message": "human-readable to stderr" }
+}
+
+///|
 test "multi destination logger writes to all files" {
   let ps = ["_build/test.multi.sync.0", "_build/test.multi.sync.1"]
   for p in ps {
