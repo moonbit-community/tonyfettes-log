@@ -87,6 +87,14 @@ key-value output:
 @xlog.global().set_handler(@xlog.Stdout(format=@xlog.Text))
 ```
 
+`Stderr` mirrors `Stdout` but writes to standard error, so diagnostics stay
+separate from program output. It takes the same `format` option:
+
+```moonbit
+@xlog.global().set_handler(@xlog.Stderr())
+@xlog.global().set_handler(@xlog.Stderr(format=@xlog.Text))
+```
+
 `File` opens an append-mode file and defaults to `Jsonl`:
 
 ```moonbit

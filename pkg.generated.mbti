@@ -106,6 +106,10 @@ pub fn Logger::warn(Self, category? : String, loc~ : SourceLoc) -> Event?
 pub(all) struct Multi(Array[&Handler])
 pub impl Handler for Multi
 
+type Stderr
+pub fn Stderr::Stderr(format? : Format) -> Self
+pub impl Handler for Stderr
+
 type Stdout
 pub fn Stdout::Stdout(format? : Format) -> Self
 pub impl Handler for Stdout
@@ -116,4 +120,3 @@ pub impl Handler for Stdout
 pub(open) trait Handler {
   fn handle(Self, Entry) -> Unit raise
 }
-

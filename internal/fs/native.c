@@ -58,6 +58,19 @@ tonyfettes_xlog_internal_fs_write(
 }
 
 MOONBIT_FFI_EXPORT int
+tonyfettes_xlog_internal_fs_stderr_write(moonbit_bytes_t data) {
+  int len = Moonbit_array_length(data);
+  if (len == 0) {
+    return 0;
+  }
+  size_t written = fwrite(data, 1, (size_t)len, stderr);
+  if (written != (size_t)len) {
+    return -1;
+  }
+  return fflush(stderr) == 0 ? 0 : -1;
+}
+
+MOONBIT_FFI_EXPORT int
 tonyfettes_xlog_internal_fs_flush(
   tonyfettes_xlog_internal_fs_file_t *handle) {
   if (handle == NULL || handle->file == NULL) {
