@@ -40,6 +40,31 @@ pub impl Handler for Stdout with fn handle(self : Stdout, entry : Entry) -> Unit
 }
 
 ///|
+/// A handler that writes log entries to standard error.
+struct Stderr {
+  format : Format
+}
+
+///|
+/// Create a standard-error handler.
+///
+/// The default format is `Jsonl`.
+pub fn Stderr::Stderr(format? : Format = Jsonl) -> Stderr {
+  Stderr::{ format, }
+}
+
+///|
+pub impl Handler for Stderr with fn handle(self : Stderr, entry : Entry) -> Unit {
+  let sb = StringBuilder()
+  match self.format {
+    Text => sb.write_string(entry.to_string())
+    Jsonl => sb.write_string(entry.to_json().stringify())
+  }
+  sb.write_char('\n')
+  @fs.stderr_write_string(sb.to_string())
+}
+
+///|
 /// Error raised by `Multi` when one or more child handlers fail.
 pub(all) suberror MultiError {
   /// The errors collected from failing child handlers.

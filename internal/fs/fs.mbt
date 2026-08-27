@@ -55,6 +55,18 @@ pub fn File::write_string(self : File, data : String) -> Unit raise IOError {
 }
 
 ///|
+#borrow(data)
+extern "C" fn write_stderr(data : Bytes) -> Int = "tonyfettes_xlog_internal_fs_stderr_write"
+
+///|
+/// Write a UTF-8 string to standard error.
+pub fn stderr_write_string(data : String) -> Unit raise IOError {
+  guard write_stderr(@utf8.encode(data)) == 0 else {
+    raise IOError("failed to write to stderr")
+  }
+}
+
+///|
 /// Flush buffered file contents to the operating system.
 pub fn File::flush(self : File) -> Unit raise IOError {
   guard !is_null(self) else {
