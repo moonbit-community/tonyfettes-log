@@ -247,3 +247,27 @@ pub fn debug(category? : String, loc~ : SourceLoc) -> Event? {
 pub fn trace(category? : String, loc~ : SourceLoc) -> Event? {
   global_logger.trace(category?, loc~)
 }
+
+///|
+/// Saved handler, root level, and configuration of a logger.
+/// The handler and configuration are retained by reference, not cloned.
+struct LoggerState {
+  handler : &Handler
+  level : Level
+  config : Config?
+}
+
+///|
+/// Save the logger's current state before temporarily replacing its settings.
+pub fn Logger::save(self : Logger) -> LoggerState {
+  { handler: self.handler, level: self.level, config: self.config, }
+}
+
+///|
+/// Restore a saved state. This does not close the replaced handler.
+/// Nested temporary configurations must restore their states in reverse order.
+pub fn Logger::restore(self : Logger, state : LoggerState) -> Unit {
+  self.handler = state.handler
+  self.level = state.level
+  self.config = state.config
+}

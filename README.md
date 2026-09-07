@@ -77,6 +77,23 @@ logger.debug(category="app.db") <? { "message": "query plan" }
 Invalid levels, invalid directives, and invalid categories raise `ConfigError`.
 The package global logger catches invalid `MOON_XLOG` and falls back to `Info`.
 
+## Temporary logger configuration
+
+Save and restore the global logger when temporarily taking over its output:
+
+```moonbit
+let logger = @xlog.global()
+let saved = logger.save()
+defer logger.restore(saved)
+logger.set_handler(@xlog.Stdout(format=@xlog.Text))
+logger.set_config(@xlog.Config(level=@xlog.Warn))
+```
+
+The saved state retains the original handler, root level, and optional
+configuration object. It retains references rather than cloning the handler or
+configuration. Restore nested scopes in reverse order. Restore before closing a
+temporary handler; `restore` does not close handlers itself.
+
 ## Outputs
 
 `Stdout` defaults to one JSON object per line. Use `Text` for human-readable

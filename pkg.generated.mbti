@@ -95,6 +95,8 @@ pub fn Logger::event(Self, Level, category? : String, loc~ : SourceLoc) -> Event
 pub fn Logger::fatal(Self, category? : String, loc~ : SourceLoc) -> Event?
 #callsite(autofill(loc))
 pub fn Logger::info(Self, category? : String, loc~ : SourceLoc) -> Event?
+pub fn Logger::restore(Self, LoggerState) -> Unit
+pub fn Logger::save(Self) -> LoggerState
 pub fn Logger::set_config(Self, Config) -> Unit
 pub fn[H : Handler] Logger::set_handler(Self, H) -> Unit
 pub fn Logger::set_level(Self, Level) -> Unit
@@ -102,6 +104,8 @@ pub fn Logger::set_level(Self, Level) -> Unit
 pub fn Logger::trace(Self, category? : String, loc~ : SourceLoc) -> Event?
 #callsite(autofill(loc))
 pub fn Logger::warn(Self, category? : String, loc~ : SourceLoc) -> Event?
+
+type LoggerState
 
 pub(all) struct Multi(Array[&Handler])
 pub impl Handler for Multi
@@ -116,4 +120,3 @@ pub impl Handler for Stdout
 pub(open) trait Handler {
   fn handle(Self, Entry) -> Unit raise
 }
-
