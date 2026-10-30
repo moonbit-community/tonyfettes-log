@@ -12,7 +12,7 @@ test "open_append preserves existing content" {
   let path = "_build/test.internal.fs.append"
   reset_file(path)
   @x/fs.write_string_to_file(path, "first\n")
-  let file = File::open_append(path)
+  let file = @fs.File::open_append(path)
   defer file.close()
   file.write_string("second")
   file.flush()
@@ -23,10 +23,12 @@ test "open_append preserves existing content" {
 test "close is idempotent and write after close fails" {
   let path = "_build/test.internal.fs.closed"
   reset_file(path)
-  let file = File::open_append(path)
+  let file = @fs.File::open_append(path)
   file.close()
   file.close()
-  let result : Result[Unit, IOError] = try file.write_string("closed") catch {
+  let result : Result[Unit, @fs.IOError] = try
+    file.write_string("closed")
+  catch {
     err => Err(err)
   } noraise {
     value => Ok(value)

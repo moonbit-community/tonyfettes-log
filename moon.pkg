@@ -3,7 +3,6 @@ supported_targets = "native"
 import {
   "moonbitlang/core/env",
   "moonbitlang/x/time" @x/time,
-  "moonbitlang/core/debug",
   "tonyfettes/xlog/internal/fs",
 }
 

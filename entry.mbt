@@ -18,14 +18,14 @@ fn Entry::Entry(
   level~ : Level,
   category? : String,
   source? : SourceLoc,
-  timestamp? : Int64 = @env.now().reinterpret_as_int64(),
-  fields? : Map[String, Json] = Map([]),
+  timestamp~ : Int64 = @env.now().reinterpret_as_int64(),
+  fields~ : Map[String, Json] = Map([]),
 ) -> Entry {
   let timestamp = try! @x/time.unix(
     timestamp / 1_000,
     nanosecond=(timestamp % 1_000).to_int() * 1_000_000,
   )
-  Entry::{ level, category, timestamp, source, fields }
+  Entry::{ level, category, timestamp, source, fields, }
 }
 
 ///|
