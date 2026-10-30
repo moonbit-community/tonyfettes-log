@@ -27,7 +27,7 @@ struct Stdout {
 /// Create a standard-output handler.
 ///
 /// The default format is `Jsonl`.
-pub fn Stdout::Stdout(format? : Format = Jsonl) -> Stdout {
+pub fn Stdout::Stdout(format~ : Format = Jsonl) -> Stdout {
   Stdout::{ format, }
 }
 
@@ -82,10 +82,10 @@ struct File {
 /// The default format is `Jsonl`.
 pub fn File::File(
   path : String,
-  format? : Format = Jsonl,
+  format~ : Format = Jsonl,
 ) -> File raise @fs.IOError {
   let file = @fs.File::open_append(path)
-  File::{ format, file }
+  File::{ format, file, }
 }
 
 ///|

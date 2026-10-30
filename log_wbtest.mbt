@@ -144,9 +144,9 @@ test "multi attempts every handler and returns collected errors" {
   let second_messages : Array[String] = []
   let ok_entries : Array[Entry] = []
   let handlers : Array[&Handler] = [
-    FailingHandler::{ messages: first_messages },
-    MemoryHandler::{ entries: ok_entries },
-    FailingHandler::{ messages: second_messages },
+    FailingHandler::{ messages: first_messages, },
+    MemoryHandler::{ entries: ok_entries, },
+    FailingHandler::{ messages: second_messages, },
   ]
   let result = try Multi(handlers).handle(test_entry("fanout")) catch {
     err => Err(err)

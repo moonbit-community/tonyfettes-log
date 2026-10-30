@@ -53,11 +53,11 @@ pub impl Show for Level with fn output(self, logger) -> Unit {
 /// each entry.
 pub fn[H : Handler] Logger::Logger(
   handler : H,
-  level? : Level = Info,
+  level~ : Level = Info,
   config? : Config,
 ) -> Logger {
   let level = if config is Some(config) { config.level } else { level }
-  Logger::{ handler, level, config }
+  Logger::{ handler, level, config, }
 }
 
 ///|
@@ -108,7 +108,7 @@ pub fn Logger::event(
   loc~ : SourceLoc,
 ) -> Event? {
   if self.is_level_enabled(level, category?) {
-    Some(Event::{ logger: self, entry: Entry(level~, category?, source=loc) })
+    Some(Event::{ logger: self, entry: Entry(level~, category?, source=loc), })
   } else {
     None
   }

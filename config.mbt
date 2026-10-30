@@ -10,8 +10,8 @@ struct Config {
 
 ///|
 /// Create a configuration with the given root level.
-pub fn Config::Config(level? : Level = Info) -> Config {
-  Config::{ level, levels: Map([]) }
+pub fn Config::Config(level~ : Level = Info) -> Config {
+  Config::{ level, levels: Map([]), }
 }
 
 ///|
@@ -32,8 +32,8 @@ pub(all) suberror ConfigError {
 /// directives: either a root level such as `debug`, or a category override such
 /// as `app.db=trace`.
 pub fn Config::from_env(
-  env? : String = "MOON_XLOG",
-  level? : Level = Info,
+  env~ : String = "MOON_XLOG",
+  level~ : Level = Info,
 ) -> Config raise ConfigError {
   let config = Config(level~)
   guard @env.get_env_var(env) is Some(spec) else { config }

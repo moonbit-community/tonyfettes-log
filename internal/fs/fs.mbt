@@ -17,11 +17,11 @@ extern "C" fn is_null(file : File) -> Bool = "tonyfettes_xlog_internal_fs_is_nul
 
 ///|
 #borrow(file, data)
-extern "C" fn write(file : File, data : Bytes) -> Int = "tonyfettes_xlog_internal_fs_write"
+extern "C" fn write(file : File, data : Bytes) -> Int32 = "tonyfettes_xlog_internal_fs_write"
 
 ///|
 #borrow(file)
-extern "C" fn flush(file : File) -> Int = "tonyfettes_xlog_internal_fs_flush"
+extern "C" fn flush(file : File) -> Int32 = "tonyfettes_xlog_internal_fs_flush"
 
 ///|
 #borrow(file)

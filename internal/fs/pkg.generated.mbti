@@ -7,6 +7,8 @@ package "tonyfettes/xlog/internal/fs"
 pub(all) suberror IOError {
   IOError(String)
 }
+pub fn IOError::output(Self, &Logger) -> Unit
+pub fn IOError::to_string(Self) -> String
 pub impl Show for IOError
 
 // Types and methods
@@ -20,4 +22,3 @@ pub fn File::write_string(Self, String) -> Unit raise IOError
 // Type aliases
 
 // Traits
-

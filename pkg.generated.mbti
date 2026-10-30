@@ -55,6 +55,9 @@ pub struct Entry {
   source : SourceLoc?
   fields : Map[String, Json]
 }
+pub fn Entry::output(Self, &@builtin.Logger) -> Unit
+pub fn Entry::to_json(Self) -> Json
+pub fn Entry::to_string(Self) -> String
 pub impl Show for Entry
 pub impl ToJson for Entry
 
@@ -66,6 +69,7 @@ pub fn[T : ToJson] Event::write_object_field(Self, String, T) -> Unit
 type File
 pub fn File::File(String, format? : Format) -> Self raise @fs.IOError
 pub fn File::close(Self) -> Unit
+pub fn File::handle(Self, Entry) -> Unit raise
 pub impl Handler for File
 
 pub(all) enum Format {
@@ -81,6 +85,15 @@ pub(all) enum Level {
   Debug
   Trace
 } derive(Compare, Eq)
+pub fn Level::compare(Self, Self) -> Int32
+pub fn Level::equal(Self, Self) -> Bool
+pub fn Level::not_equal(Self, Self) -> Bool
+pub fn Level::op_ge(Self, Self) -> Bool
+pub fn Level::op_gt(Self, Self) -> Bool
+pub fn Level::op_le(Self, Self) -> Bool
+pub fn Level::op_lt(Self, Self) -> Bool
+pub fn Level::output(Self, &@builtin.Logger) -> Unit
+pub fn Level::to_string(Self) -> String
 pub impl Show for Level
 
 type Logger
@@ -104,10 +117,12 @@ pub fn Logger::trace(Self, category? : String, loc~ : SourceLoc) -> Event?
 pub fn Logger::warn(Self, category? : String, loc~ : SourceLoc) -> Event?
 
 pub(all) struct Multi(Array[&Handler])
+pub fn Multi::handle(Self, Entry) -> Unit raise
 pub impl Handler for Multi
 
 type Stdout
 pub fn Stdout::Stdout(format? : Format) -> Self
+pub fn Stdout::handle(Self, Entry) -> Unit raise
 pub impl Handler for Stdout
 
 // Type aliases
@@ -116,4 +131,3 @@ pub impl Handler for Stdout
 pub(open) trait Handler {
   fn handle(Self, Entry) -> Unit raise
 }
-
