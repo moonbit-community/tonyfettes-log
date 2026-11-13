@@ -20,4 +20,7 @@ pub extend Level with Show::{to_string, output}
 pub extend Multi with Handler::{handle}
 
 ///|
+pub extend Stderr with Handler::{handle}
+
+///|
 pub extend Stdout with Handler::{handle}

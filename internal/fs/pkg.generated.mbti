@@ -2,6 +2,7 @@
 package "tonyfettes/xlog/internal/fs"
 
 // Values
+pub fn stderr_write_string(String) -> Unit raise IOError
 
 // Errors
 pub(all) suberror IOError {

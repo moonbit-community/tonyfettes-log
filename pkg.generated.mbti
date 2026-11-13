@@ -122,6 +122,11 @@ pub(all) struct Multi(Array[&Handler])
 pub fn Multi::handle(Self, Entry) -> Unit raise
 pub impl Handler for Multi
 
+type Stderr
+pub fn Stderr::Stderr(format? : Format) -> Self
+pub fn Stderr::handle(Self, Entry) -> Unit raise
+pub impl Handler for Stderr
+
 type Stdout
 pub fn Stdout::Stdout(format? : Format) -> Self
 pub fn Stdout::handle(Self, Entry) -> Unit raise
