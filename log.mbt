@@ -13,6 +13,7 @@ struct Logger {
 ///
 /// A record is emitted when its level is less than or equal to the effective
 /// logger level.
+#derive(Eq, Compare)
 pub(all) enum Level {
   /// A fatal failure.
   Fatal
@@ -26,7 +27,7 @@ pub(all) enum Level {
   Debug
   /// Very verbose diagnostic information.
   Trace
-} derive(Eq, Compare)
+}
 
 ///|
 pub impl Show for Level with fn to_string(self) -> String {
