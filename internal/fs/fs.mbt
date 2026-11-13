@@ -56,7 +56,7 @@ pub fn File::write_string(self : File, data : String) -> Unit raise IOError {
 
 ///|
 #borrow(data)
-extern "C" fn write_stderr(data : Bytes) -> Int = "tonyfettes_xlog_internal_fs_stderr_write"
+extern "C" fn write_stderr(data : Bytes) -> Int32 = "tonyfettes_xlog_internal_fs_stderr_write"
 
 ///|
 /// Write a UTF-8 string to standard error.

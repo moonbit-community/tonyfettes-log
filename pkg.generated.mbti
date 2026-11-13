@@ -124,6 +124,7 @@ pub impl Handler for Multi
 
 type Stderr
 pub fn Stderr::Stderr(format? : Format) -> Self
+pub fn Stderr::handle(Self, Entry) -> Unit raise
 pub impl Handler for Stderr
 
 type Stdout

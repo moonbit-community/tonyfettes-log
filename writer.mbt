@@ -49,7 +49,7 @@ struct Stderr {
 /// Create a standard-error handler.
 ///
 /// The default format is `Jsonl`.
-pub fn Stderr::Stderr(format? : Format = Jsonl) -> Stderr {
+pub fn Stderr::Stderr(format~ : Format = Jsonl) -> Stderr {
   Stderr::{ format, }
 }
 
